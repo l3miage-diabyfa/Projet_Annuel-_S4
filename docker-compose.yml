@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: school-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-school_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-school_password}
+      POSTGRES_DB: ${POSTGRES_DB:-school_db}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - school-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U school_admin -d school_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NestJS Backend
+  backend:
+    image: school-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: school-backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-school_admin}:${POSTGRES_PASSWORD:-school_password}@postgres:5432/${POSTGRES_DB:-school_db}?schema=public
+      NODE_ENV: development
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      # - /app/dist    <--- FIX THIS LATER
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - school-network
+    command: npm run start:dev
+
+  # Next.js Frontend
+  frontend:
+    image: school-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: school-frontend
+    restart: always
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NODE_ENV: development
+    ports:
+      - '3001:3000'
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - school-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+
+networks:
+  school-network:
+    driver: bridge
