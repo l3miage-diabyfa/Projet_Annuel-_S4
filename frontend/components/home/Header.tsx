@@ -34,7 +34,7 @@ export default function Header() {
             href="#"
             className="button-primary flex items-center justify-center"
           >
-            J'essaie !
+            S&apos;inscrire
             <BiChevronRight className="w-5 h-5" />
           </Link>
           <Link

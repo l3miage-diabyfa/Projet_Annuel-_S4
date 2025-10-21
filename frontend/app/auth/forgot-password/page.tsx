@@ -43,8 +43,11 @@ export default function ForgotPasswordPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <h2 className="title-mochiy text-[18px] leading-none mb-2">
+            Mot de passe oublié
+          </h2> 
           <InputField
-            label="Adresse email"
+            label="Saisissez votre adresse email"
             name="email"
             type="email"
             placeholder="Entrez votre email"
@@ -53,7 +56,7 @@ export default function ForgotPasswordPage() {
             required
           />
           <button type="submit" className="button-primary mx-auto">
-            Réinitialiser le mot de passe <FiArrowUpRight />
+            Réinitialiser mon mot de passe <FiArrowUpRight />
           </button>
         </form>
       )}

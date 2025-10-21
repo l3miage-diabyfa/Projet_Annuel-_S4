@@ -49,8 +49,8 @@ export default function Footer() {
 
             <div>
               <h3 className="text-white font-bold mb-4">Nous contacter</h3>
-              <button className="px-6 py-2.5 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-primary-orange transition-all duration-300">
-                Nous joindre
+              <button className="px-6 py-2.5 border-2 border-white text-white font-normal rounded-lg hover:bg-white hover:text-primary-orange transition-all duration-300">
+                hello@izzzi.io
               </button>
             </div>
           </div>

@@ -69,10 +69,11 @@ export default function ResetPasswordPage() {
             <div className="text-red-600 text-sm font-medium">{error}</div>
           )}
           <button type="submit" className="button-primary mx-auto !w-full">
-            Réinitialiser le mot de passe <FiArrowUpRight />
+            Réinitialiser mon mot de passe <FiArrowUpRight />
           </button>
         </form>
       )}
     </>
   );
 }
+
