@@ -46,7 +46,7 @@ body {
 
 /* Composant Button Primary  */
 .button-primary {
-  @apply bg-primary cursor-pointer text-gray-900 rounded-lg py-4 w-fit px-6 hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2;
+  @apply bg-primary cursor-pointer text-gray-900 rounded-lg py-4 w-full px-6 hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2;
 }
 
 /* Composant Button Primary Dark */

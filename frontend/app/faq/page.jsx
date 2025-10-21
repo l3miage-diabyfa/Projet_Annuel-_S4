@@ -5,7 +5,7 @@ export default function Page() {
   return (
     <>
     <Header />
-    <div className=" container mx-auto text-center px-8 py-6 bg-blue-500 max-w-[560px] w-full ">
+    <div className="text-center px-8 py-6 bg-blue-500 w-full ">
       <h1 className="text-xl font-bold font-mochiy text-[#131316]">Comment peut-on vous aider ?</h1>
     </div>
 
