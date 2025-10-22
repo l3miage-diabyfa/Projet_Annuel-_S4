@@ -1,16 +1,27 @@
 import FaqCard from '@/components/Faq/FaqCard';
 import Header from '@/components/home/Header';
 import Footer from '@/components/home/Footer';
+import { BiSearch } from 'react-icons/bi';
 export default function Page() {
   return (
     <>
     <Header />
-    <div className="text-center px-8 py-6 bg-blue-500 w-full ">
-      <h1 className="text-xl font-bold font-mochiy text-[#131316]">Comment peut-on vous aider ?</h1>
-    </div>
+    <div className="justify-center items-center flex flex-col gap-4 text-center pt-42 px-8 pb-10 bg-gray-100 w-full">
+  <h1 className="text-3xl font font-mochiy text-[#131316]">Comment peut-on vous aider ?</h1>
+  <div className="relative w-full max-w-md">
+    <input 
+      type="search" 
+      className="input w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+      placeholder="Tapez votre recherche ici" 
+    />
+    <BiSearch
+      className="absolute right-3 top-7 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+    />
+  </div>
+</div>
 
-    <main className="flex flex-col justify-center container mx-auto px-16">
-      <section className="w-full max-w-[1368px]">
+    <main className="bg-white flex flex-col justify-center px-16 py-16">
+      <section className="container mx-auto w-full max-w-[1368px]">
         <h2 className="mb-4 text-[18px] font-semibold text-[#131316]">
           Questions fréquentes
         </h2>
@@ -56,16 +67,16 @@ export default function Page() {
       </div>
       </section>
 
-      <section className="mt-12 w-full max-w-[1368px]">
+      <section className="container mx-auto mt-12 w-full max-w-[1368px]">
         <h2 className="mb-4 text-[18px] font-semibold text-[#131316]">
           Autres questions
         </h2>
         <div>
-          <ul className="list-autres-questions pl-5 flex gap-4 mb-8">
-                <li> <span class="font-bold underline">Usage </span></li>
-                <li>Fonctionnalités</li>
-                <li>Données & confidentialité</li>
-                <li>Gestion administrative</li>
+          <ul className="list-autres-questions pl-5 flex flex-wrap gap-4 mb-8">
+                <li className='whitespace-nowrap font-bold underline'> Usage </li>
+                <li className='whitespace-nowrap'>Fonctionnalités</li>
+                <li className='whitespace-nowrap'>Données & confidentialité</li>
+                <li className='whitespace-nowrap'>Gestion administrative</li>
               </ul>
         </div>
         

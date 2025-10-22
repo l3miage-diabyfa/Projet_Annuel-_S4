@@ -23,7 +23,7 @@ export default function FaqCard({
           aria-controls={panelId}
           onClick={() => setOpen((v) => !v)}
         >
-          <span className="text-[16px] font-semibold leading-none text-[#131316]">
+          <span className="text-[16px] font-bold leading-none text-[#131316]">
             {question}
           </span>
 
@@ -44,7 +44,7 @@ export default function FaqCard({
         }`}
       >
         <div className="min-h-0">
-          <div className="pt-4 text-[14px] leading-[1.6] text-[#464646]">
+          <div className="pt-4 text-[16px] leading-[1.6] text-[#464646]">
             {children}
           </div>
         </div>
