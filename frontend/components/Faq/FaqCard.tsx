@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { BiChevronDown } from 'react-icons/bi';
+import { BiChevronRight } from 'react-icons/bi';
 
 export default function FaqCard({
   question,
@@ -15,7 +15,7 @@ export default function FaqCard({
   const panelId = question.toLowerCase().replace(/\s+/g, '-');
 
   return (
-    <article className="rounded-lg border border-[#F4F4F4] bg-[#F9F9F9] p-6">
+    <article className="rounded-lg border border-[#F4F4F4]  bg-[#F4F4F4] p-6">
       <h3>
         <button
           className="group flex w-full items-center justify-between text-left"
@@ -27,9 +27,9 @@ export default function FaqCard({
             {question}
           </span>
 
-          <BiChevronDown
+          <BiChevronRight
             className={`size-5 shrink-0 transition-transform duration-200 ${
-              open ? 'rotate-180' : ''
+              open ? 'rotate-90' : ''
             }`}
             strokeWidth={2}
           />

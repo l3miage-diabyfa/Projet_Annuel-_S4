@@ -27,7 +27,7 @@ export default function SignupPage() {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+      <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
         <div>
           <InputField
             label="Nom de l'établissement"
@@ -37,7 +37,7 @@ export default function SignupPage() {
             value={form.etablissement}
             onChange={handleChange}
             required
-            className="input"
+            className="input w-full"
           />
         </div>
         <div>
@@ -49,7 +49,7 @@ export default function SignupPage() {
             value={form.email}
             onChange={handleChange}
             required
-            className="input"
+            className="input w-full"
           />
         </div>
         <div>
@@ -61,7 +61,7 @@ export default function SignupPage() {
             value={form.nom}
             onChange={handleChange}
             required
-            className="input"
+            className="input w-full"
           />
         </div>
         <div>
@@ -73,7 +73,7 @@ export default function SignupPage() {
             value={form.prenom}
             onChange={handleChange}
             required
-            className="input"
+            className="input w-full"
           />
         </div>
         <div>
@@ -85,10 +85,10 @@ export default function SignupPage() {
             value={form.password}
             onChange={handleChange}
             required
-            className="input"
+            className="input w-full"
           />
         </div>
-        <button type="submit" className="button-primary mx-auto !px-8">
+        <button type="submit" className="button-primary w-auto mx-auto py-2 px-6">
           Créer un compte <FiArrowUpRight />
         </button>
       </form>

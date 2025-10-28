@@ -24,7 +24,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2  w-full">
         <InputField
           label="Adresse email"
           name="email"
@@ -32,6 +32,7 @@ export default function LoginPage() {
           placeholder="Entrez votre email"
           value={form.email}
           onChange={handleChange}
+          className="input w-full"
           required
         />
 
@@ -42,6 +43,7 @@ export default function LoginPage() {
           placeholder="Entrez votre mot de passe"
           value={form.password}
           onChange={handleChange}
+          className="input w-full"
           required
         />
 

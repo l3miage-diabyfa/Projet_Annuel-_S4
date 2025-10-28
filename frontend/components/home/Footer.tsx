@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-primary-orange py-12 px-6 sm:container sm:mx-auto">
+    <footer className="bg-primary-orange py-12 px-6">
       <div className="max-w-7xl mx-auto ">
         <div className="flex flex-col md:flex-row items-center md:items-start md:justify-between gap-8 pt-6 pb-8">
 
@@ -24,10 +24,9 @@ export default function Footer() {
             </Link>
           </div>
 
-          {/* Les deux autres loin à droite */}
-          <div className="flex flex-col md:flex-row md:gap-16 w-full text-center md:text-end md:justify-end">
-            <div className="mb-8 md:mb-0">
-              <h3 className="text-white font-mochiy mb-4">Plan du site</h3>
+          <div className="flex flex-col md:flex-row md:gap-16 text-center md:text-left">
+            <div className="mb-8 md:mb-0 ">
+              <h3 className="text-white font-mochiy mb-4 text-[16px]">Plan du site</h3>
               <ul className="space-y-2">
                 <li>
                   <a href="#" className="text-white text-[16px] hover:underline">
@@ -56,7 +55,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-white/20 flex justify-center md:justify-end gap-3 items-center ">
+        <div className="mt-12 pt-6 flex justify-center md:justify-end gap-6 items-center ">
           <p className="text-white text-sm">Mentions légales</p>
           <p className="text-white text-sm">FAQ</p>
         </div>
