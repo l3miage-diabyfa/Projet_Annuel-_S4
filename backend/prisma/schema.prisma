@@ -9,56 +9,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model - represents teachers and students
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  role      Role     @default(TEACHER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  taughtClasses     Class[]             @relation("TeacherClasses")
-  enrollments       StudentEnrollment[]
-}
-
-// Class model - represents a class/course
-model Class {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  teacherId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  teacher     User                @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
-  enrollments StudentEnrollment[]
-  
-  @@index([teacherId])
-}
-
-// StudentEnrollment model - join table between Class and User (students)
-model StudentEnrollment {
-  id        String   @id @default(uuid())
-  classId   String
-  studentId String
-  createdAt DateTime @default(now())
-  
-  // Relations
-  class     Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  student   User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
-  // A student can only be enrolled in a class once
-  @@unique([classId, studentId])
-  @@index([classId])
-  @@index([studentId])
-}
-
 // Role enum - defines user types
 enum Role {
   TEACHER
   STUDENT
   ADMIN
+  REFERENT
+}
+
+// User model - represents teachers and students
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  lastname       String
+  name           String
+  password       String
+  firstname      String
+  username       String   @unique
+  profilePic     String?
+  subscriptionId String?
+  role           Role     @default(TEACHER)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  classes Class[]
+
+  teacher Teacher?
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  type      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users User[]
+}
+
+model Teacher {
+  id        String   @id @default(uuid())
+  userId    String?  @unique
+  name      String
+  lastname  String
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  classes Class[]  @relation("ClassTeachers")
+  lessons Lesson[]
+}
+
+// Class model - represents a class/course
+model Class {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  academicYear String
+  gradeLevel   String
+  isActive     Boolean  @default(true)
+  referentId   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  referent User      @relation(fields: [referentId], references: [id], onDelete: Cascade)
+  teachers Teacher[] @relation("ClassTeachers")
+  lessons  Lesson[]
+}
+
+model Lesson {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  classId     String
+  teacherId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId])
+  // Relations
+  @@index([classId])
 }
