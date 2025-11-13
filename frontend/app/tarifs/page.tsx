@@ -246,18 +246,18 @@ export default function PricingPage() {
             
             <div className="mb-6">
               <div className="text-white px-3 py-1 rounded-full text-sm font-medium inline-block mb-4" style={{backgroundColor: '#F26103'}}>
-                {numberOfClasses} classes
+                {numberOfClasses >= 20 ? '+20' : numberOfClasses} classes
               </div>
               <div className="relative mb-4">
                 <input
                   type="range"
                   min="1"
                   max="20"
-                  value={numberOfClasses}
+                  value={numberOfClasses > 20 ? 20 : numberOfClasses}
                   onChange={(e) => setNumberOfClasses(parseInt(e.target.value))}
                   className="w-full h-2 bg-orange-600 rounded-full appearance-none cursor-pointer slider"
                   style={{
-                    background: `linear-gradient(to right, #F26103 0%, #F26103 ${((numberOfClasses - 1) / 19) * 100}%, #fff ${((numberOfClasses - 1) / 19) * 100}%, #fff 100%)`
+                    background: `linear-gradient(to right, #F26103 0%, #F26103 ${((Math.min(numberOfClasses, 20) - 1) / 19) * 100}%, #fff ${((Math.min(numberOfClasses, 20) - 1) / 19) * 100}%, #fff 100%)`
                   }}
                 />
                 <div className="flex justify-between text-xs mt-2 pointer-events-none">
@@ -270,15 +270,24 @@ export default function PricingPage() {
               </div>
             </div>
 
-            <div className="text-5xl font-bold mb-6">
-              {isAnnual ? '17€' : '22€'}
-              <span className="text-lg font-normal text-black opacity-80"> par mois / par classe</span>
-            </div>
+            {numberOfClasses < 20 ? (
+              <>
+                <div className="text-5xl font-bold mb-6">
+                  {isAnnual ? '17€' : '22€'}
+                  <span className="text-lg font-normal text-black opacity-80"> par mois / par classe</span>
+                </div>
 
-            <button className="w-full text-black py-3 px-6 rounded-lg font-medium mb-8 flex items-center justify-center hover:opacity-90" style={{backgroundColor: '#FFE552'}}>
-              Je passe en mode illimité
-              <span className="ml-2">↗</span>
-            </button>
+                <button className="w-full text-black py-3 px-6 rounded-lg font-medium mb-8 flex items-center justify-center hover:opacity-90" style={{backgroundColor: '#FFE552'}}>
+                  Je passe en mode illimité
+                  <span className="ml-2">↗</span>
+                </button>
+              </>
+            ) : (
+              <button className="w-full text-black py-3 px-6 rounded-lg font-medium mb-8 flex items-center justify-center hover:opacity-90" style={{backgroundColor: '#FFE552'}}>
+                Demander une offre sur mesure
+                <span className="ml-2">↗</span>
+              </button>
+            )}
 
             <div className="mb-6">
               <p className="font-medium mb-2 text-black">Tout ce qu&apos;il y a dans le plan gratuit,</p>
