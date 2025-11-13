@@ -28,12 +28,13 @@ export default function Page() {
     <>
       <Header />
 
+      <div className="z-10 h-40  absolute top-0 left-0 justify-center items-center flex flex-col gap-4 text-center pt-42 px-8 pb-10 -mb-16 bg-[#F4F4F4] w-full"></div>
+
       {/* Hero section */}
-      <div className="items-center text-center pt-42 px-8 pb-10 bg-[#F4F4F4] w-full"></div>
-      <section className="">
+      <section className="bg-white pb-16 ">
         <form
           onSubmit={handleSubmit}
-          className="max-w-3xl mx-auto flex flex-col gap-4 bg-amber-500"
+          className="z-20 mt-40 relative bg-white max-w-md p-12 mx-auto flex flex-col gap-4 rounded-lg border border-gray-300"
         >
           <div>
             <InputField
