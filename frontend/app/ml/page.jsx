@@ -78,7 +78,7 @@ export default function Page() {
         </section>
 
         {/* Données personnelles */}
-        <section className="max-w-3xl mx-auto px-6 md:px-8 mb-16">
+        <section className="max-w-3xl mx-auto px-6 md:px-8 pb-16">
           <h2 className="mb-4 text-xl md:text-2xl font-mochiy text-[#131316]">
             Données personnelles
           </h2>
