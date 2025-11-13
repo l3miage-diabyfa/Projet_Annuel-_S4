@@ -38,7 +38,7 @@ export default function Header() {
             Nos tarifs
           </Link>
           <Link
-            href="#"
+            href="/auth/signup"
             className="whitespace-nowrap button-primary !w-full flex items-center justify-center"
           >
             S&apos;inscrire
