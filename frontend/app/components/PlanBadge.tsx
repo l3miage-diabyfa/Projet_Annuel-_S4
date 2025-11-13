@@ -7,10 +7,9 @@ interface PlanBadgeProps {
   planType: PlanType;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
-  noBg?: boolean;
 }
 
-export default function PlanBadge({ planType, size = 'md', className = '', noBg = false }: PlanBadgeProps) {
+export default function PlanBadge({ planType, size = 'md', className = '' }: PlanBadgeProps) {
   const icon = planType === 'izzzi' ? faThumbsUp : faHands;
   const label = planType === 'izzzi' ? 'Izzzi' : 'Super Izzzi';
   
@@ -20,11 +19,9 @@ export default function PlanBadge({ planType, size = 'md', className = '', noBg 
     lg: 'px-6 py-3 text-base',
   };
 
-  const bgClass = noBg ? '' : 'bg-gray-100 text-gray-800';
-
   return (
     <span 
-      className={`${bgClass} rounded-full font-medium inline-flex items-center gap-2 ${sizeClasses[size]} ${className}`}
+      className={`bg-gray-100 text-gray-800 rounded-full font-medium inline-flex items-center gap-2 ${sizeClasses[size]} ${className}`}
     >
       <FontAwesomeIcon icon={icon} />
       {label}

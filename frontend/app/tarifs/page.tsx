@@ -1,40 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck } from '@fortawesome/free-solid-svg-icons';
-import Button from '../components/Button';
-import PlanBadge from '../components/PlanBadge';
-import FeatureList from '../components/FeatureList';
-import ComparisonTable from '../components/ComparisonTable';
+import { faCheck, faThumbsUp, faHands } from '@fortawesome/free-solid-svg-icons';
 
 export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(true);
   const [numberOfClasses, setNumberOfClasses] = useState(7);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'izzzi' | 'super'>('izzzi');
 
-  const freeFeatures = [
-    { title: "4 mois d'essai illimités", description: "(matières, classes, retours)" },
-    { title: "Puis 5 retours visibles par matière", description: "(les autres sont enregistrés mais masqués)" },
-    { title: "Anonymat garanti pour tous les retours" },
-    { title: "Relance manuelle possible", description: "(bouton à cliquer)" },
-    { title: "Export des retours en CSV à tout moment" },
-    { title: "QR code généré automatiquement" },
-    { title: "IA avancée", description: "(alertes négatives & alertes positives)" },
-    { title: "Page de suivi des alertes", description: "(notifications, commentaires possibles)" },
-  ];
-
-  const premiumFeatures = [
-    { title: "Nombre de retours illimité" },
-    { title: "IA générative pour répondre aux alertes", description: "(un mail prêt à envoyer en un clic)" },
-    { title: "Levée d'anonymat activable par l'étudiant", description: "(Bientôt disponible)" },
-    { title: "Formulaires personnalisables", description: "(Bientôt disponible)" },
-    { title: "Envoi automatique du formulaire", description: "(Bientôt disponible)" },
-    { title: "Branding personnalisé (couleurs, logo)", description: "(Au début et à la fin du cours. Bientôt disponible)" },
-    { title: "Suppression du logo Izzzi", description: "(Bientôt disponible)" },
-  ];
-
-  const comparisonFeatures = [
+  const features = [
     { name: "Nombre de classes actives", free: "Illimité", premium: "Illimité" },
     { name: "Matières par classe", free: "Illimité", premium: "Illimité" },
     { name: "Retours visibles par matière", free: "5 par matière (après 4 mois)", premium: "Illimité" },
@@ -145,7 +122,9 @@ export default function PricingPage() {
             <button
               onClick={() => setIsAnnual(true)}
               className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
-                isAnnual ? 'bg-black text-white' : 'text-gray-600 hover:text-gray-800'
+                isAnnual
+                  ? 'bg-black text-white'
+                  : 'text-gray-600 hover:text-gray-800'
               }`}
             >
               Annuel -30%
@@ -153,7 +132,9 @@ export default function PricingPage() {
             <button
               onClick={() => setIsAnnual(false)}
               className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
-                !isAnnual ? 'bg-black text-white' : 'text-gray-600 hover:text-gray-800'
+                !isAnnual
+                  ? 'bg-black text-white'
+                  : 'text-gray-600 hover:text-gray-800'
               }`}
             >
               Mensuel
@@ -162,22 +143,76 @@ export default function PricingPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 mb-16">
-          {/* Free Plan Card */}
           <div className="bg-white rounded-lg shadow-sm p-8">
             <div className="mb-4">
-              <PlanBadge planType="izzzi" />
+              <span className="bg-gray-100 text-gray-800 px-4 py-2 rounded-full text-sm font-medium flex items-center w-fit">
+                <FontAwesomeIcon icon={faThumbsUp} className="mr-2" />
+                Izzzi
+              </span>
             </div>
-            
             <div className="text-5xl font-bold mb-6 text-black">
               0€
               <span className="text-lg font-normal text-black"> / mois</span>
             </div>
-
-            <Button fullWidth icon="↗" className="mb-8">
+            <button className="w-full text-black py-3 px-6 rounded-lg font-medium mb-8 flex items-center justify-center hover:opacity-90" style={{backgroundColor: '#FFE552'}}>
               Démarrer mes 4 mois gratuits
-            </Button>
+              <span className="ml-2">↗</span>
+            </button>
 
-            <FeatureList features={freeFeatures} />
+            <ul className="space-y-3">
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <div className="text-sm text-black">
+                  <span className="font-medium">4 mois d&apos;essai illimités</span>
+                  <br />
+                  <span className="text-black opacity-80">(matières, classes, retours)</span>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <div className="text-sm text-black">
+                  <span className="font-medium">Puis 5 retours visibles par matière</span>
+                  <br />
+                  <span className="text-black opacity-80">(les autres sont enregistrés mais masqués)</span>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <span className="text-sm font-medium text-black">Anonymat garanti pour tous les retours</span>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <div className="text-sm text-black">
+                  <span className="font-medium">Relance manuelle possible</span>
+                  <br />
+                  <span className="text-black opacity-80">(bouton à cliquer)</span>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <span className="text-sm font-medium text-black">Export des retours en CSV à tout moment</span>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <span className="text-sm font-medium text-black">QR code généré automatiquement</span>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <div className="text-sm text-black">
+                  <span className="font-medium">IA avancée</span>
+                  <br />
+                  <span className="text-black opacity-80">(alertes négatives & alertes positives)</span>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <div className="text-sm text-black">
+                  <span className="font-medium">Page de suivi des alertes</span>
+                  <br />
+                  <span className="text-black opacity-80">(notifications, commentaires possibles)</span>
+                </div>
+              </li>
+            </ul>
 
             <div className="mt-6 pt-6">
               <p className="text-sm font-bold mb-2 text-black">Au-delà des 4 mois :</p>
@@ -193,16 +228,17 @@ export default function PricingPage() {
               </ul>
             </div>
 
-            <Button variant="outline" fullWidth icon="↗" className="mt-8">
+            <button className="w-full border border-black text-black py-3 px-6 rounded-lg font-medium hover:bg-black hover:text-white transition-colors mt-8 flex items-center justify-center">
               Voir les détails du plan
-            </Button>
+              <span className="ml-2">↗</span>
+            </button>
           </div>
 
-          {/* Premium Plan Card */}
           <div className="rounded-lg shadow-sm p-8 text-black relative overflow-hidden" style={{backgroundColor: '#F69D04'}}>
             <div className="mb-4">
-              <span className="inline-block" style={{backgroundColor: '#FFE552', borderRadius: '9999px'}}>
-                <PlanBadge planType="super" noBg className="text-black" />
+              <span className="text-black px-4 py-2 rounded-full text-sm font-medium flex items-center w-fit" style={{backgroundColor: '#FFE552'}}>
+                <FontAwesomeIcon icon={faHands} className="mr-2" />
+                Super Izzzi
               </span>
             </div>
             
@@ -240,14 +276,17 @@ export default function PricingPage() {
                   {isAnnual ? '17€' : '22€'}
                   <span className="text-lg font-normal text-black opacity-80"> par mois / par classe</span>
                 </div>
-                <Button fullWidth icon="↗" className="mb-8">
+
+                <button className="w-full text-black py-3 px-6 rounded-lg font-medium mb-8 flex items-center justify-center hover:opacity-90" style={{backgroundColor: '#FFE552'}}>
                   Je passe en mode illimité
-                </Button>
+                  <span className="ml-2">↗</span>
+                </button>
               </>
             ) : (
-              <Button fullWidth icon="↗" className="mb-8">
+              <button className="w-full text-black py-3 px-6 rounded-lg font-medium mb-8 flex items-center justify-center hover:opacity-90" style={{backgroundColor: '#FFE552'}}>
                 Demander une offre sur mesure
-              </Button>
+                <span className="ml-2">↗</span>
+              </button>
             )}
 
             <div className="mb-6">
@@ -255,15 +294,177 @@ export default function PricingPage() {
               <p className="opacity-90 text-sm text-black">et en plus :</p>
             </div>
 
-            <FeatureList features={premiumFeatures} className="text-sm" />
+            <ul className="space-y-3 text-sm text-black">
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <span>Nombre de retours illimité</span>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <div>
+                  <span>IA générative pour répondre aux alertes</span>
+                  <br />
+                  <span className="text-xs text-black opacity-80">(un mail prêt à envoyer en un clic)</span>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <div>
+                  <span>Levée d&apos;anonymat activable par l&apos;étudiant</span>
+                  <br />
+                  <span className="text-xs text-black opacity-80">(Bientôt disponible)</span>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <div>
+                  <span>Formulaires personnalisables</span>
+                  <br />
+                  <span className="text-xs text-black opacity-80">(Bientôt disponible)</span>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <div>
+                  <span>Envoi automatique du formulaire</span>
+                  <br />
+                  <span className="text-xs text-black opacity-80">(Bientôt disponible)</span>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <div>
+                  <span>Branding personnalisé (couleurs, logo)</span>
+                  <br />
+                  <span className="text-xs text-black opacity-80">(Au début et à la fin du cours. Bientôt disponible)</span>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <FontAwesomeIcon icon={faCheck} className="text-black mr-3 mt-0.5" />
+                <div>
+                  <span>Suppression du logo Izzzi</span>
+                  <br />
+                  <span className="text-xs text-black opacity-80">(Bientôt disponible)</span>
+                </div>
+              </li>
+            </ul>
 
-            <Button variant="outline" fullWidth icon="↗" className="mt-8">
+            <button className="w-full border border-black text-black py-3 px-6 rounded-lg font-medium hover:bg-black hover:text-white transition-colors mt-8 flex items-center justify-center">
               Voir les détails du plan
-            </Button>
+              <span className="ml-2">↗</span>
+            </button>
           </div>
         </div>
 
-        <ComparisonTable features={comparisonFeatures} isAnnual={isAnnual} />
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-center mb-8">Comparez nos plans</h2>
+          
+          <div className="md:hidden mb-6 flex gap-2">
+            <button
+              onClick={() => setSelectedPlan('izzzi')}
+              className={`flex-1 px-4 py-3 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                selectedPlan === 'izzzi'
+                  ? 'bg-black text-white'
+                  : 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              <FontAwesomeIcon icon={faThumbsUp} />
+              Izzzi
+            </button>
+            <button
+              onClick={() => setSelectedPlan('super')}
+              className={`flex-1 px-4 py-3 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                selectedPlan === 'super'
+                  ? 'bg-black text-white'
+                  : 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              <FontAwesomeIcon icon={faHands} />
+              Super Izzzi
+            </button>
+          </div>
+
+          <div className="md:hidden bg-white rounded-lg overflow-hidden border border-gray-300">
+            <div className="p-6 bg-gray-50 border-b border-gray-200 text-center">
+              <div className="mb-3">
+                <span className="bg-gray-100 text-gray-800 px-4 py-2 rounded-full text-sm font-medium inline-flex items-center gap-2">
+                  <FontAwesomeIcon icon={selectedPlan === 'izzzi' ? faThumbsUp : faHands} />
+                  {selectedPlan === 'izzzi' ? 'Izzzi' : 'Super Izzzi'}
+                </span>
+              </div>
+              {selectedPlan === 'izzzi' ? (
+                <>
+                  <p className="text-2xl font-bold mb-1">0€ <span className="text-sm font-normal">par mois</span></p>
+                  <p className="text-xs text-gray-500 mb-4">(4 mois d'essai illimités)</p>
+                  <button className="text-black px-6 py-3 rounded-lg text-sm font-medium hover:opacity-90 inline-flex items-center gap-2" style={{backgroundColor: '#FFE552'}}>
+                    Démarrer l'essai gratuit
+                    <span>↗</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-600 mb-1">À partir de</p>
+                  <p className="text-2xl font-bold mb-4">{isAnnual ? '17€' : '22€'} <span className="text-sm font-normal">par mois / classe</span></p>
+                  <button className="text-black px-6 py-3 rounded-lg text-sm font-medium hover:opacity-90 inline-flex items-center gap-2" style={{backgroundColor: '#FFE552'}}>
+                    Je choisis ce plan
+                    <span>↗</span>
+                  </button>
+                </>
+              )}
+            </div>
+
+            {features.map((feature, index) => (
+              <div key={index} className="p-4 bg-white border-b border-gray-200">
+                <div className="font-semibold text-sm mb-2">{feature.name}</div>
+                <div className="text-sm text-gray-700">
+                  {selectedPlan === 'izzzi' ? feature.free : feature.premium}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block bg-white rounded-lg overflow-hidden border border-gray-300">
+            <div className="grid grid-cols-3 gap-4 p-6 bg-gray-50 border-b border-gray-200">
+              <div></div>
+              <div className="text-center">
+                <div className="mb-3">
+                  <span className="bg-gray-100 text-gray-800 px-4 py-2 rounded-full text-sm font-medium flex items-center justify-center w-fit mx-auto">
+                    <FontAwesomeIcon icon={faThumbsUp} className="mr-2" />
+                    Izzzi
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-1">0€ <span className="text-xs">par mois</span></p>
+                <p className="text-xs text-gray-500 mb-3">(4 mois d'essai illimités)</p>
+                <button className="text-black px-4 py-2 rounded text-sm font-medium hover:opacity-90" style={{backgroundColor: '#FFE552'}}>
+                  Démarrer l'essai gratuit
+                  <span className="ml-1">↗</span>
+                </button>
+              </div>
+              <div className="text-center">
+                <div className="mb-3">
+                  <span className="bg-gray-100 text-gray-800 px-4 py-2 rounded-full text-sm font-medium flex items-center justify-center w-fit mx-auto">
+                    <FontAwesomeIcon icon={faHands} className="mr-2" />
+                    Super Izzzi
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-1">À partir de</p>
+                <p className="text-sm text-gray-600 mb-3">{isAnnual ? '17€' : '22€'} <span className="text-xs">par mois / classe</span></p>
+                <button className="text-black px-4 py-2 rounded text-sm font-medium hover:opacity-90" style={{backgroundColor: '#FFE552'}}>
+                  Je passe en mode illimité
+                  <span className="ml-1">↗</span>
+                </button>
+              </div>
+            </div>
+
+            {features.map((feature, index) => (
+              <div key={index} className="grid grid-cols-3 gap-4 p-4 bg-white border-b border-gray-200">
+                <div className="font-medium text-sm border-r border-gray-200 pr-4">{feature.name}</div>
+                <div className="text-center text-sm border-r border-gray-200 pr-4">{feature.free}</div>
+                <div className="text-center text-sm">{feature.premium}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         <div className="rounded-lg p-12 text-center text-white mb-16 relative" style={{backgroundColor: '#F26103'}}>
           <div className="flex items-center justify-center mb-4">
@@ -286,9 +487,10 @@ export default function PricingPage() {
             <button className="border-2 border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white hover:text-orange-500 transition-colors">
               hello@izzzi.io
             </button>
-            <Button icon="↗">
+            <button className="text-black px-6 py-3 rounded-lg font-medium hover:opacity-90 flex items-center" style={{backgroundColor: '#FFE552'}}>
               Nous contacter
-            </Button>
+              <span className="ml-2">↗</span>
+            </button>
           </div>
         </div>
 
