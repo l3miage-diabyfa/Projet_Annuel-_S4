@@ -70,29 +70,48 @@ $ mau deploy
 
 With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
-## Resources
+# Données de Test
+Le projet est seedé automatiquement avec :
+## Enseignants :
 
-Check out a few resources that may come in handy when working with NestJS:
+John Doe (john.doe@school.com) - ID: 378e5c7d-8235-4b61-b5e4-76cfeca11a3e
+Jane Smith (jane.smith@school.com)
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Étudiants :
 
-## Support
+Alice Johnson (alice@school.com)
+Bob Williams (bob@school.com)
+Charlie Brown (charlie@school.com)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Classes :
 
-## Stay in touch
+Mathematics 101 (Enseignant: John Doe, 2 étudiants)
+Physics 101 (Enseignant: John Doe, 1 étudiant)
+Literature 101 (Enseignant: Jane Smith, 1 étudiant)
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# 🧪 Tester les APIs
+## 1. Vérifier la Santé de l'API
+```bash
+Invoke-RestMethod -Uri "http://localhost:3000/health"
+```
 
-## License
+## Ou avec curl
+```bash
+curl.exe http://localhost:3000/health
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 2. Récupérer Toutes les Classes
+``` bash 
+# GET /classes
+Invoke-RestMethod -Uri "http://localhost:3000/classes"
+```
+
+## 3. Récupérer une Classe Spécifique
+```bash
+# GET /classes/:id
+$classId = "00000000-0000-0000-0000-000000000001"
+Invoke-RestMethod -Uri "http://localhost:3000/classes/$classId"
+```
+
+# 📋 Endpoints API Disponibles
+En cours
