@@ -1,0 +1,48 @@
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      Role     @default(TEACHER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  taughtClasses Class[] @relation("TeacherClasses")
+  enrollments   StudentEnrollment[]
+}
+
+model Class {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  teacherId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  teacher     User     @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+  enrollments StudentEnrollment[]
+  
+  @@index([teacherId])
+}
+
+model StudentEnrollment {
+  id        String   @id @default(uuid())
+  classId   String
+  studentId String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  class     Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student   User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@unique([classId, studentId])
+  @@index([classId])
+  @@index([studentId])
+}
+
+enum Role {
+  TEACHER
+  STUDENT
+  ADMIN
+}
