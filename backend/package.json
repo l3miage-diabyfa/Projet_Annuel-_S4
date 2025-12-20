@@ -21,7 +21,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "start:docker": "npm run prisma:generate && npm run prisma:migrate && npm run start:dev"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

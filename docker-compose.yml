@@ -9,13 +9,13 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-school_password}
       POSTGRES_DB: ${POSTGRES_DB:-school_db}
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - school-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U school_admin -d school_db']
+      test: ["CMD-SHELL", "pg_isready -U school_admin -d school_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,7 +33,7 @@ services:
       NODE_ENV: development
       PORT: 3000
     ports:
-      - '3000:3000'
+      - "3000:3000"
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -43,7 +43,7 @@ services:
         condition: service_healthy
     networks:
       - school-network
-    command: npm run start:dev
+    command: npm run start:docker
 
   # Next.js Frontend
   frontend:
@@ -57,7 +57,7 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:3000
       NODE_ENV: development
     ports:
-      - '3001:3000'
+      - "3001:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
