@@ -17,7 +17,7 @@ export class UserService {
   ) { }
 
   async registerAdmin(registerAdminDto: RegisterAdminDto) {
-    const { schoolName, email, lastName, firstName, password } = registerAdminDto;
+    const { schoolName, email, lastname, firstname, password } = registerAdminDto;
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) throw new ConflictException('Cet email est déjà utilisé.');
     const alreadyExists = await this.prisma.establishment.findUnique({ where: { name: schoolName } });
@@ -27,8 +27,8 @@ export class UserService {
     const user = await this.prisma.user.create({
       data: {
         email,
-        lastname: lastName,
-        firstname: firstName,
+        lastname: lastname,
+        firstname: firstname,
         password: hashedPassword,
         role: 'ADMIN',
         establishmentId: establishment.id,
