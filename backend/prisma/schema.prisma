@@ -17,27 +17,36 @@ enum Role {
   REFERENT
 }
 
+// Establishment model - represents schools or institutions
+model Establishment {
+  id    String @id @default(uuid())
+  name  String @unique
+  users User[]
+  // Ajoute ici les relations vers classes, teachers, etc. si besoin
+}
+
 // User model - represents teachers and students
 model User {
   id             String   @id @default(uuid())
   email          String   @unique
   lastname       String
-  name           String
   password       String
   firstname      String
-  username       String   @unique
   profilePic     String?
   subscriptionId String?
+  establishmentId String
   role           Role     @default(TEACHER)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   // Relations
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  establishment Establishment @relation(fields: [establishmentId], references: [id])
 
   classes Class[]
 
   teacher Teacher?
+  enrollments Enrollment[]
 }
 
 model Subscription {
@@ -53,7 +62,7 @@ model Subscription {
 model Teacher {
   id        String   @id @default(uuid())
   userId    String?  @unique
-  name      String
+  firstname String
   lastname  String
   bio       String?
   createdAt DateTime @default(now())
@@ -61,7 +70,6 @@ model Teacher {
 
   // Relations
   user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  classes Class[]  @relation("ClassTeachers")
   lessons Lesson[]
 }
 
@@ -73,14 +81,27 @@ model Class {
   academicYear String
   gradeLevel   String
   isActive     Boolean  @default(true)
-  referentId   String
+  teacherId   String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // Relations
-  referent User      @relation(fields: [referentId], references: [id], onDelete: Cascade)
-  teachers Teacher[] @relation("ClassTeachers")
+  teacher User      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  enrollments Enrollment[]
   lessons  Lesson[]
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  classId   String
+  studentId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId])
 }
 
 model Lesson {

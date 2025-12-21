@@ -20,7 +20,8 @@ export class ClassesService {
     teacher: {
       select: { 
         id: true, 
-        name: true, 
+        firstname: true, 
+        lastname: true, 
         email: true, 
         role: true 
       },
@@ -30,7 +31,8 @@ export class ClassesService {
         student: {
           select: { 
             id: true, 
-            name: true, 
+            firstname: true, 
+            lastname: true, 
             email: true, 
             role: true 
           },
@@ -200,7 +202,7 @@ export class ClassesService {
     }
 
     // Check if already enrolled
-    const existingEnrollment = await this.prisma.studentEnrollment.findUnique({
+    const existingEnrollment = await this.prisma.enrollment.findUnique({
       where: {
         classId_studentId: { classId, studentId },
       },
@@ -208,15 +210,15 @@ export class ClassesService {
 
     if (existingEnrollment) {
       throw new ConflictException(
-        `Student ${student.name} is already enrolled in this class`
+        `Student ${student.firstname} ${student.lastname} is already enrolled in this class`
       );
     }
 
-    return this.prisma.studentEnrollment.create({
+    return this.prisma.enrollment.create({
       data: { classId, studentId },
       include: {
         student: {
-          select: { id: true, name: true, email: true, role: true },
+          select: { id: true, firstname: true, lastname: true, email: true, role: true },
         },
         class: {
           select: { id: true, name: true },
@@ -229,7 +231,7 @@ export class ClassesService {
    * REMOVE STUDENT - Unenroll a student from a class
    */
   async removeStudent(classId: string, studentId: string) {
-    const enrollment = await this.prisma.studentEnrollment.findUnique({
+    const enrollment = await this.prisma.enrollment.findUnique({
       where: {
         classId_studentId: { classId, studentId },
       },
@@ -241,7 +243,7 @@ export class ClassesService {
       );
     }
 
-    await this.prisma.studentEnrollment.delete({
+    await this.prisma.enrollment.delete({
       where: {
         classId_studentId: { classId, studentId },
       },
@@ -259,11 +261,11 @@ export class ClassesService {
     return {
       classId: classItem.id,
       name: classItem.name,
-      teacher: classItem.teacher.name,
+      teacher: classItem.teacher.firstname + ' ' + classItem.teacher.lastname,
       totalStudents: classItem.enrollments.length,
       students: classItem.enrollments.map(e => ({
         id: e.student.id,
-        name: e.student.name,
+        name: e.student.firstname + ' ' + e.student.lastname,
         email: e.student.email,
         enrolledAt: e.createdAt,
       })),

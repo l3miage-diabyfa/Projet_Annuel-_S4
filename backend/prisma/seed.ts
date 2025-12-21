@@ -5,14 +5,40 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
+  // Create establishment
+  const establishment = await prisma.establishment.upsert({
+    where: { name: 'Test School' },
+    update: {},
+    create: {
+      name: 'Test School',
+    },
+  });
+
+  // Create admin
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@school.com' },
+    update: {},
+    create: {
+      email: 'admin@school.com',
+      firstname: 'Super',
+      lastname: 'Admin',
+      password: 'password',
+      role: 'ADMIN',
+      establishmentId: establishment.id,
+    },
+  });
+
   // Create teachers
   const teacher1 = await prisma.user.upsert({
     where: { email: 'john.doe@school.com' },
     update: {},
     create: {
       email: 'john.doe@school.com',
-      name: 'John Doe',
+      firstname: 'John',
+      lastname: 'Doe',
+      password: 'password',
       role: 'TEACHER',
+      establishmentId: establishment.id,
     },
   });
 
@@ -21,8 +47,11 @@ async function main() {
     update: {},
     create: {
       email: 'jane.smith@school.com',
-      name: 'Jane Smith',
+      firstname: 'Jane',
+      lastname: 'Smith',
+      password: 'password',
       role: 'TEACHER',
+      establishmentId: establishment.id,
     },
   });
 
@@ -32,8 +61,11 @@ async function main() {
     update: {},
     create: {
       email: 'alice@school.com',
-      name: 'Alice Johnson',
+      firstname: 'Alice',
+      lastname: 'Johnson',
+      password: 'password',
       role: 'STUDENT',
+      establishmentId: establishment.id,
     },
   });
 
@@ -42,8 +74,11 @@ async function main() {
     update: {},
     create: {
       email: 'bob@school.com',
-      name: 'Bob Williams',
+      firstname: 'Bob',
+      lastname: 'Williams',
+      password: 'password',
       role: 'STUDENT',
+      establishmentId: establishment.id,
     },
   });
 
@@ -52,8 +87,11 @@ async function main() {
     update: {},
     create: {
       email: 'charlie@school.com',
-      name: 'Charlie Brown',
+      firstname: 'Charlie',
+      lastname: 'Brown',
+      password: 'password',
       role: 'STUDENT',
+      establishmentId: establishment.id,
     },
   });
 
@@ -65,6 +103,8 @@ async function main() {
       id: '00000000-0000-0000-0000-000000000001',
       name: 'Mathematics 101',
       description: 'Introduction to Algebra and Geometry',
+      academicYear: '2025-2026',
+      gradeLevel: '6e',
       teacherId: teacher1.id,
     },
   });
@@ -76,6 +116,8 @@ async function main() {
       id: '00000000-0000-0000-0000-000000000002',
       name: 'Physics 101',
       description: 'Basic principles of Physics',
+      academicYear: '2025-2026',
+      gradeLevel: '5e',
       teacherId: teacher1.id,
     },
   });
@@ -87,12 +129,14 @@ async function main() {
       id: '00000000-0000-0000-0000-000000000003',
       name: 'Literature 101',
       description: 'Introduction to World Literature',
+      academicYear: '2025-2026',
+      gradeLevel: '4e',
       teacherId: teacher2.id,
     },
   });
 
   // Enroll students in classes
-  await prisma.studentEnrollment.upsert({
+  await prisma.enrollment.upsert({
     where: {
       classId_studentId: {
         classId: class1.id,
@@ -106,7 +150,7 @@ async function main() {
     },
   });
 
-  await prisma.studentEnrollment.upsert({
+  await prisma.enrollment.upsert({
     where: {
       classId_studentId: {
         classId: class1.id,
@@ -120,7 +164,7 @@ async function main() {
     },
   });
 
-  await prisma.studentEnrollment.upsert({
+  await prisma.enrollment.upsert({
     where: {
       classId_studentId: {
         classId: class2.id,
@@ -134,7 +178,7 @@ async function main() {
     },
   });
 
-  await prisma.studentEnrollment.upsert({
+  await prisma.enrollment.upsert({
     where: {
       classId_studentId: {
         classId: class3.id,
@@ -149,8 +193,10 @@ async function main() {
   });
 
   console.log('✅ Seed data created!');
-  console.log(`Teachers: ${teacher1.name}, ${teacher2.name}`);
-  console.log(`Students: ${student1.name}, ${student2.name}, ${student3.name}`);
+  console.log(`Establishment: ${establishment.name}, ID: ${establishment.id}`);
+  console.log(`Admin: ${admin.firstname} ${admin.lastname}`);
+  console.log(`Teachers: ${teacher1.firstname} ${teacher1.lastname}, ${teacher2.firstname} ${teacher2.lastname}`);
+  console.log(`Students: ${student1.firstname} ${student1.lastname}, ${student2.firstname} ${student2.lastname}, ${student3.firstname} ${student3.lastname}`);
   console.log(`Classes: ${class1.name}, ${class2.name}, ${class3.name}`);
 }
 
