@@ -4,10 +4,11 @@ import { RegisterAdminDto } from './dto/register-admin.dto';
 import { RegisterReferentDto } from './dto/register-referent.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { LoginUserDto } from './dto/login-user.dto';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Post('register')
   async registerAdmin(@Body() registerAdminDto: RegisterAdminDto) {
@@ -29,5 +30,16 @@ export class UserController {
   @Get('by-establishment/:establishmentId')
   async getUsersByEstablishment(@Param('establishmentId') establishmentId: string) {
     return this.userService.getUsersByEstablishment(establishmentId);
+  }
+
+  @Get('all')
+  async getAllUsers() {
+    //sécuriser la route
+    return this.userService.getAllUsers();
+  }
+
+  @Post('login')
+  async login(@Body() loginUserDto: LoginUserDto) {
+    return this.userService.login(loginUserDto);
   }
 }
