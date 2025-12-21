@@ -12,6 +12,14 @@ export class CreateClassDto {
   @MaxLength(500, { message: 'Description must not exceed 500 characters' })
   description?: string;
 
+  @IsString()
+  @IsNotEmpty({ message: 'Academic year is required' })
+  academicYear: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Grade level is required' })
+  gradeLevel: string;
+
   @IsUUID('4', { message: 'Teacher ID must be a valid UUID' })
   @IsNotEmpty()
   teacherId: string;
