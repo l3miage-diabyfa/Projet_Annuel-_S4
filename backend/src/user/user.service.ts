@@ -9,6 +9,7 @@ import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UnauthorizedException } from '@nestjs/common';
+import { User, Establishment } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -24,17 +25,20 @@ export class UserService {
     if (existing) throw new ConflictException('Cet email est déjà utilisé.');
     const alreadyExists = await this.prisma.establishment.findUnique({ where: { name: schoolName } });
     if (alreadyExists) throw new ConflictException("Un établissement avec ce nom existe déjà.");
-    const establishment = await this.prisma.establishment.create({ data: { name: schoolName } });
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        lastname: lastname,
-        firstname: firstname,
-        password: hashedPassword,
-        role: 'ADMIN',
-        establishmentId: establishment.id,
-      },
+    const { establishment, user } = await this.prisma.$transaction(async (transaction: PrismaService) => {
+      const establishment = await transaction.establishment.create({ data: { name: schoolName } });
+      const user = await transaction.user.create({
+        data: {
+          email,
+          lastname: lastname,
+          firstname: firstname,
+          password: hashedPassword,
+          role: 'ADMIN',
+          establishmentId: establishment.id,
+        },
+      });
+      return { establishment, user };
     });
     const jwt = await this.authService.generateJwt(user);
     return { message: 'Admin enregistré avec succès', access_token: jwt.access_token };
