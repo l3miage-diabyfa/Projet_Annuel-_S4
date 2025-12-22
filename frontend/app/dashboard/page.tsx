@@ -138,47 +138,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-8 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo à gauche */}
-          <div className="flex items-center gap-2 min-w-[180px]">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
-                <span className="text-white text-xl">▶</span>
-              </div>
-              <span className="text-2xl font-bold">izzzi</span>
-            </Link>
-          </div>
-          {/* Navigation centrée */}
-          <nav className="flex gap-6 justify-center flex-1">
-            <Link href="/classes" className="text-gray-700 hover:text-black transition-colors flex items-center h-10">
-              Mes classes
-            </Link>
-            <Link 
-              href="/dashboard" 
-              className="bg-black text-white px-6 rounded-lg hover:bg-gray-800 transition-colors flex items-center h-10"
-            >
-              Dashboard
-            </Link>
-          </nav>
-          {/* Profil à droite */}
-          <div className="flex items-center gap-4 min-w-[220px] justify-end">
-            <button className="text-gray-600 hover:text-black transition-colors">
-              <FiBell className="w-6 h-6" />
-            </button>
-            <div className="flex items-center gap-3 bg-gray-100 rounded-lg px-4 py-2">
-              <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold">
-                YC
-              </div>
-              <div>
-                <div className="font-semibold text-sm">Yoann Coualan</div>
-                <div className="text-xs text-gray-500">Plan gratuit</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-8 py-8">
@@ -229,15 +188,13 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-600 mb-1">{userInfo.email}</p>
                 <p className="text-sm text-gray-500">{userInfo.establishment}</p>
               </div>
-              <div className="flex justify-center mt-4">
-                <button
-                  onClick={handleLogout}
-                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-3 px-6 rounded-lg transition-colors inline-flex items-center gap-2"
-                >
-                  Déconnexion
-                  <FiArrowUpRight className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                onClick={handleLogout}
+                className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-3 px-6 rounded-lg transition-colors inline-flex items-center gap-2"
+              >
+                Déconnexion
+                <FiArrowUpRight className="w-4 h-4" />
+              </button>
             </div>
 
             {/* Billing Management */}
@@ -245,15 +202,15 @@ export default function DashboardPage() {
               <h3 className="text-lg font-bold mb-4">Gérer la facturation</h3>
               <div className="space-y-3 mb-6">
                 <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <FiCheck className="w-4 h-4 text-black" />
+                  <FiCheck className="w-4 h-4 text-green-600" />
                   <span>Gère tes informations de paiement</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <FiCheck className="w-4 h-4 text-black" />
+                  <FiCheck className="w-4 h-4 text-green-600" />
                   <span>Télécharge tes factures</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <FiCheck className="w-4 h-4 text-black" />
+                  <FiCheck className="w-4 h-4 text-green-600" />
                   <span>Arrête ton abonnement</span>
                 </div>
               </div>
