@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import Link from "next/link";
 import InputField from "@/components/shared/InputField";
 import { FiArrowUpRight } from "react-icons/fi";
+import { apiFetch } from "@/utils/api";
+import { setTokenCookie } from "@/utils/cookie";
 
 export default function SignupPage() {
   const [form, setForm] = useState({
@@ -13,20 +15,46 @@ export default function SignupPage() {
     prenom: "",
     password: "",
   });
+  const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Logique d'inscription à ajouter ici
-    console.log("Données du formulaire:", form);
-    alert("Compte créé !");
+    setError("");
+    if (!form.etablissement || !form.email || !form.nom || !form.prenom || !form.password) {
+      setError("Tous les champs sont obligatoires.");
+      return;
+    }
+    const { data, error } = await apiFetch<{ access_token: string; message?: string }>(
+      "/user/register",
+      {
+        method: "POST",
+        body: {
+          schoolName: form.etablissement,
+          email: form.email,
+          lastname: form.nom,
+          firstname: form.prenom,
+          password: form.password,
+        },
+      }
+    );
+    if (data && data.access_token) {
+      setTokenCookie(data.access_token);
+      alert("Compte créé !");
+      // Rediriger ou mettre à jour l'UI ici
+    } else {
+      setError(error || data?.message || "Erreur lors de l'inscription");
+    }
   };
 
   return (
     <>
+      {error && (
+        <div className="text-red-500 text-sm mb-2">{error}</div>
+      )}
       <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
         <div>
           <InputField
@@ -88,7 +116,10 @@ export default function SignupPage() {
             className="input w-full"
           />
         </div>
-        <button type="submit" className="button-primary w-auto mx-auto py-2 px-6">
+        <button
+          type="submit"
+          className="button-primary w-auto mx-auto py-2 px-6"
+        >
           Créer un compte <FiArrowUpRight />
         </button>
       </form>

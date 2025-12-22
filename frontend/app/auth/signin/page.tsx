@@ -4,22 +4,43 @@ import React, { useState } from "react";
 import Link from "next/link";
 import InputField from "@/components/shared/InputField";
 import { FiArrowUpRight } from "react-icons/fi";
+import { apiFetch } from "@/utils/api";
+import { setTokenCookie } from "@/utils/cookie";
 
 export default function LoginPage() {
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
+  const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Logique de connexion
-    console.log("Données de connexion:", form);
-    alert("Connexion réussie !");
+    if (!form.email || !form.password) {
+      setError("Veuillez remplir tous les champs.");
+      return;
+    }
+    const { data, error } = await apiFetch<{ access_token: string; message?: string }>(
+      "/user/login",
+      {
+        method: "POST",
+        body: {
+          email: form.email,
+          password: form.password,
+        },
+      }
+    );
+    if (data && data.access_token) {
+      setTokenCookie(data.access_token);
+      alert("Connexion réussie !");
+      // Rediriger ou mettre à jour l'UI ici
+    } else {
+      setError(error || data?.message || "Erreur lors de la connexion");
+    }
   };
 
   return (
