@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Button from '../components/Button';
 import Header from '../../components/home/Header';
 import Footer from '../../components/home/Footer';
 
 export default function ContactPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     organization: '',
     lastName: '',
@@ -20,6 +22,7 @@ export default function ContactPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form submitted:', formData);
+    router.push('/contact/confirmation');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

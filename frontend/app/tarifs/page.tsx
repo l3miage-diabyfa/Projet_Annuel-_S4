@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import Button from '../components/Button';
@@ -178,9 +179,11 @@ export default function PricingPage() {
                 </Button>
               </>
             ) : (
-              <Button fullWidth icon="↗" className="mb-8">
-                Demander une offre sur mesure
-              </Button>
+              <Link href="/contact" className="block">
+                <Button fullWidth icon="↗" className="mb-8">
+                  Demander une offre sur mesure
+                </Button>
+              </Link>
             )}
 
             <div className="mb-6">
