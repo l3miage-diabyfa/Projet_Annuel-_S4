@@ -32,7 +32,7 @@ export default function Header() {
         {/* Navigation Desktop */}
         <nav className="hidden md:flex items-center gap-3 lg:gap-4">
           <Link
-            href="#"
+            href="/tarifs"
             className="whitespace-nowrap button-text flex items-center justify-center"
           >
             Nos tarifs
@@ -78,7 +78,7 @@ export default function Header() {
           {/* Menu Panel avec animation */}
           <nav className="fixed top-24 left-4 right-4 mx-auto max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl p-8 z-50 md:hidden flex flex-col gap-3 animate-slide-down border border-gray-100">
             <Link
-              href="#"
+              href="/tarifs"
               className="button-text flex items-center justify-center w-full transform transition-all duration-200 hover:scale-105 py-3 rounded-xl"
               onClick={closeMenu}
             >
