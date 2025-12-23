@@ -81,9 +81,10 @@ model Class {
   academicYear String
   gradeLevel   String
   isActive     Boolean  @default(true)
-  teacherId   String
+  teacherId    String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  subjects     Subject[]
 
   // Relations
   teacher User      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
@@ -102,6 +103,23 @@ model Enrollment {
   student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([classId, studentId])
+}
+
+model Subject {
+  id                String    @id @default(uuid())
+  name              String    // Matiere_nom
+  instructorName    String?   // Intervenant_nom
+  instructorEmail   String?   // Intervenant_email
+  firstLessonDate   DateTime? // Date_premier_cours
+  lastLessonDate    DateTime? // Date_dernier_cours
+  classId           String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([classId])
 }
 
 model Lesson {
