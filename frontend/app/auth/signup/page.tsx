@@ -1,13 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import InputField from "@/components/shared/InputField";
 import { FiArrowUpRight } from "react-icons/fi";
 import { apiFetch } from "@/utils/api";
 import { setTokenCookie } from "@/utils/cookie";
+import { useUser } from "@/contexts/UserContext";
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { setUser } = useUser();
   const [form, setForm] = useState({
     etablissement: "",
     email: "",
@@ -28,7 +32,17 @@ export default function SignupPage() {
       setError("Tous les champs sont obligatoires.");
       return;
     }
-    const { data, error } = await apiFetch<{ access_token: string; message?: string }>(
+    const { data, error } = await apiFetch<{ 
+      access_token: string; 
+      message?: string;
+      user?: {
+        firstname: string;
+        lastname: string;
+        email: string;
+        role: string;
+        establishment?: string;
+      }
+    }>(
       "/user/register",
       {
         method: "POST",
@@ -43,8 +57,10 @@ export default function SignupPage() {
     );
     if (data && data.access_token) {
       setTokenCookie(data.access_token);
-      alert("Compte créé !");
-      // Rediriger ou mettre à jour l'UI ici
+      if (data.user) {
+        setUser(data.user);
+      }
+      router.push("/dashboard");
     } else {
       setError(error || data?.message || "Erreur lors de l'inscription");
     }

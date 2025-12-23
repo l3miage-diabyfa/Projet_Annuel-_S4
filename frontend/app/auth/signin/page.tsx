@@ -1,13 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import InputField from "@/components/shared/InputField";
 import { FiArrowUpRight } from "react-icons/fi";
 import { apiFetch } from "@/utils/api";
 import { setTokenCookie } from "@/utils/cookie";
+import { useUser } from "@/contexts/UserContext";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { setUser } = useUser();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -24,7 +28,17 @@ export default function LoginPage() {
       setError("Veuillez remplir tous les champs.");
       return;
     }
-    const { data, error } = await apiFetch<{ access_token: string; message?: string }>(
+    const { data, error } = await apiFetch<{ 
+      access_token: string; 
+      message?: string;
+      user?: {
+        firstname: string;
+        lastname: string;
+        email: string;
+        role: string;
+        establishment?: string;
+      }
+    }>(
       "/user/login",
       {
         method: "POST",
@@ -36,8 +50,10 @@ export default function LoginPage() {
     );
     if (data && data.access_token) {
       setTokenCookie(data.access_token);
-      alert("Connexion réussie !");
-      // Rediriger ou mettre à jour l'UI ici
+      if (data.user) {
+        setUser(data.user);
+      }
+      router.push("/dashboard");
     } else {
       setError(error || data?.message || "Erreur lors de la connexion");
     }
