@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins, Mochiy_Pop_One, Pacifico } from "next/font/google";
 import "./globals.css";
 import NextTopLoader from "nextjs-toploader";
+import { UserProvider } from "@/contexts/UserContext";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -37,7 +38,9 @@ export default function RootLayout({
         className={`${poppins.variable} ${mochiyPopOne.variable} ${pacifico.variable} antialiased`}
       >
         <NextTopLoader color="#ff6b35" />
-        {children}
+        <UserProvider>
+          {children}
+        </UserProvider>
       </body>
     </html>
   );
