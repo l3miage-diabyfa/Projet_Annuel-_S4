@@ -22,7 +22,50 @@ export class UserService {
   async registerAdmin(registerAdminDto: RegisterAdminDto) {
     const { schoolName, email, lastname, firstname, password } = registerAdminDto;
     const existing = await this.prisma.user.findUnique({ where: { email } });
-    if (existing) throw new ConflictException('Cet email est déjà utilisé.');
+    
+    // Check if user already exists with empty password (invited user)
+    if (existing) {
+      if (existing.password && existing.password !== '') {
+        throw new ConflictException('Cet email est déjà utilisé.');
+      }
+      
+      // Check if the existing user is linked to an establishment by invitation
+      if (existing.establishmentId) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = await this.prisma.user.update({
+          where: { email },
+          data: {
+            lastname,
+            firstname,
+            password: hashedPassword,
+            role: 'ADMIN',
+          },
+        });
+        
+        const establishment = await this.prisma.establishment.findUnique({ 
+          where: { id: user.establishmentId } 
+        });
+        
+        const jwt = await this.authService.generateJwt(user);
+        return {
+          message: 'Admin enregistré avec succès',
+          access_token: jwt.access_token,
+          user: {
+            lastname: user.lastname,
+            firstname: user.firstname,
+            email: user.email,
+            role: user.role,
+            establishment: establishment?.name,
+          },
+        };
+      }
+    }
+    
+    // New admin registration requires schoolName
+    if (!schoolName) {
+      throw new ConflictException("Le nom de l'établissement est obligatoire pour créer un nouveau compte admin.");
+    }
+    
     const alreadyExists = await this.prisma.establishment.findUnique({ where: { name: schoolName } });
     if (alreadyExists) throw new ConflictException("Un établissement avec ce nom existe déjà.");
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -57,7 +100,40 @@ export class UserService {
   async registerReferent(registerReferentDto: RegisterReferentDto) {
     const { email, lastname, firstname, password, establishmentId } = registerReferentDto;
     const existing = await this.prisma.user.findUnique({ where: { email } });
-    if (existing) throw new ConflictException('Cet email est déjà utilisé.');
+
+    if (existing) {
+      // if user exists with password, throw conflict
+      if (existing.password && existing.password !== '') {
+        throw new ConflictException('Cet email est déjà utilisé.');
+      }
+      
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const updatedUser = await this.prisma.user.update({
+        where: { email },
+        data: {
+          lastname,
+          firstname,
+          password: hashedPassword,
+          establishmentId,
+        },
+      });
+      
+      const establishment = await this.prisma.establishment.findUnique({ where: { id: establishmentId } });
+      const jwt = await this.authService.generateJwt(updatedUser);
+      
+      return {
+        message: 'Référent enregistré avec succès',
+        access_token: jwt.access_token,
+        user: {
+          lastname: updatedUser.lastname,
+          firstname: updatedUser.firstname,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          establishment: establishment?.name,
+        },
+      };
+    }
+
     const establishment = await this.prisma.establishment.findUnique({ where: { id: establishmentId } });
     if (!establishment) throw new ConflictException("Établissement introuvable.");
     const hashedPassword = await bcrypt.hash(password, 10);
