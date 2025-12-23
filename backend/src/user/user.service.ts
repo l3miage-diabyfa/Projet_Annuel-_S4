@@ -30,6 +30,7 @@ export class UserService {
       const establishment = await transaction.establishment.create({ data: { name: schoolName } });
       const user = await transaction.user.create({
         data: {
+          id: uuidv4(),
           email,
           lastname: lastname,
           firstname: firstname,

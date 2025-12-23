@@ -56,9 +56,11 @@ export class ClassesService {
       );
     }
 
-    if (teacher.role !== 'TEACHER') {
+    // Check if user has permission to create a class
+    const allowedRoles = ['TEACHER', 'ADMIN', 'REFERENT'];
+    if (!allowedRoles.includes(teacher.role)) {
       throw new BadRequestException(
-        'User must have TEACHER role to create a class'
+        'User must have TEACHER, ADMIN, or REFERENT role to create a class'
       );
     }
 
