@@ -36,13 +36,13 @@ export default function PricingCard({
         <span className="text-lg font-normal opacity-80">{priceLabel}</span>
       </div>
 
-      <Button fullWidth icon="↗" className="mb-8">
+      <Button href="/auth/signup" fullWidth icon="↗" className="mb-8">
         {buttonText}
       </Button>
 
       <FeatureList features={features} />
 
-      <Button variant="outline" fullWidth icon="↗" className="mt-8">
+      <Button href="#" variant="outline" fullWidth icon="↗" className="mt-8">
         Voir les détails du plan
       </Button>
     </div>
