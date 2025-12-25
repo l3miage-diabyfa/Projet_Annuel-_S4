@@ -4,8 +4,8 @@ import { UserService } from './user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './auth.service';
 import { JwtModule } from '@nestjs/jwt';
-// import { MailerService } from './mailer.service';
 import { JwtStrategy } from './jwt.strategy';
+import { EmailModule } from '../common/email/email.module';
 
 @Module({
   imports: [
@@ -13,8 +13,9 @@ import { JwtStrategy } from './jwt.strategy';
       secret: process.env.JWT_SECRET || 'dev-secret-key',
       signOptions: { expiresIn: '7d' },
     }),
+    EmailModule,
   ],
   controllers: [UserController],
-  providers: [UserService, PrismaService, AuthService, /* MailerService, */ JwtStrategy],
+  providers: [UserService, PrismaService, AuthService, JwtStrategy],
 })
 export class UserModule { }
