@@ -2,8 +2,8 @@ import { Controller, Post, Body, UseGuards, Request, Get, Param, Patch, Delete }
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { RegisterAdminDto } from './dto/register-admin.dto';
-import { RegisterReferentDto } from './dto/register-referent.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
+import { CompleteInvitationDto } from './dto/complete-invitation.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -18,17 +18,23 @@ export class UserController {
     return this.userService.registerAdmin(registerAdminDto);
   }
 
-  @Post('register-referent')
-  async registerReferent(@Body() registerReferentDto: RegisterReferentDto) {
-    return this.userService.registerReferent(registerReferentDto);
-  }
-
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @Post('invite')
   async inviteUser(@Body() inviteUserDto: InviteUserDto, @Request() req) {
     const adminId = req.user.userId;
     return this.userService.inviteUser(inviteUserDto, adminId);
+  }
+
+  @Get('validate-invitation/:token')
+  async validateInvitation(@Param('token') token: string) {
+    return this.userService.validateInvitationToken(token);
+  }
+
+  @Post('complete-invitation')
+  async completeInvitation(@Body() completeInvitationDto: CompleteInvitationDto) {
+    const { invitationToken, email, firstname, lastname, password } = completeInvitationDto;
+    return this.userService.completeInvitation(invitationToken, email, firstname, lastname, password);
   }
 
   @Get('by-establishment/:establishmentId')
@@ -61,6 +67,21 @@ export class UserController {
   async updatePassword(@Body() updatePasswordDto: UpdatePasswordDto, @Request() req) {
     const userId = req.user.userId;
     return this.userService.updatePassword(userId, updatePasswordDto.oldPassword, updatePasswordDto.newPassword);
+  }
+
+  @Post('forgot-password')
+  async requestPasswordReset(@Body() body: { email: string }) {
+    return this.userService.requestPasswordReset(body.email);
+  }
+
+  @Get('validate-reset-token/:token')
+  async validateResetPasswordToken(@Param('token') token: string) {
+    return this.userService.validateResetPasswordToken(token);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() body: { token: string; newPassword: string }) {
+    return this.userService.resetPassword(body.token, body.newPassword);
   }
 
   @UseGuards(JwtAuthGuard)

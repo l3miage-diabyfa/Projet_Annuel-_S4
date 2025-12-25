@@ -4,20 +4,46 @@ import InputField from "@/components/shared/InputField";
 import React, { useState } from "react";
 import Link from "next/link";
 import { FiArrowUpRight } from "react-icons/fi";
+import { apiFetch } from "@/utils/api";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
+    setError("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Logique d'envoi de l'email de réinitialisation
-    console.log("Demande de réinitialisation pour:", email);
-    setSubmitted(true);
+    setError("");
+
+    const { data, error: apiError } = await apiFetch<{ 
+      message: string;
+      emailStatus?: 'sent' | 'failed' | 'not_sent';
+      emailError?: any;
+    }>(
+      "/user/forgot-password",
+      {
+        method: "POST",
+        body: { email },
+      }
+    );
+
+    if (data) {
+      if (data.emailStatus === 'failed') {
+        setError("L'email n'a pas pu être envoyé. Veuillez réessayer plus tard.");
+      } else if (data.emailStatus === 'sent') {
+        setSubmitted(true);
+      } else {
+        // emailStatus === 'not_sent'
+        setSubmitted(true);
+      }
+    } else {
+      setError(apiError || "Une erreur est survenue");
+    }
   };
 
   return (
@@ -55,6 +81,9 @@ export default function ForgotPasswordPage() {
             onChange={handleChange}
             required
           />
+          {error && (
+            <div className="text-red-500 text-sm mb-2">{error}</div>
+          )}
           <button type="submit" className="button-primary mx-auto">
             Réinitialiser mon mot de passe <FiArrowUpRight />
           </button>
