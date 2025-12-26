@@ -1,8 +1,8 @@
-import { IsEmail, IsNotEmpty, MinLength, Matches } from 'class-validator';
+import { IsEmail, IsNotEmpty, MinLength, Matches, IsOptional } from 'class-validator';
 
 export class RegisterAdminDto {
-  @IsNotEmpty({ message: "Le nom de l'établissement est obligatoire." })
-  schoolName: string;
+  @IsOptional()
+  schoolName?: string;
 
   @IsEmail({}, { message: 'Adresse email invalide.' })
   @IsNotEmpty({ message: "L'adresse email est obligatoire." })

@@ -4,12 +4,20 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { ClassesModule } from './classes/classes.module';
 import { UserModule } from './user/user.module';
+import { EstablishmentModule } from './establishment/establishment.module';
+import { SubjectsModule } from './subjects/subjects.module';
+import { EmailModule } from './common/email/email.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
     PrismaModule,
     ClassesModule,
     UserModule,
+    EstablishmentModule,
+    SubjectsModule,
+    EmailModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -56,8 +56,8 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-6 flex justify-center md:justify-end gap-6 items-center ">
-          <p className="text-white text-sm">Mentions légales</p>
-          <p className="text-white text-sm">FAQ</p>
+          <a href="/ml" className="text-white text-[16px] hover:underline">Mentions légales</a>
+          <a href="/faq" className="text-white text-[16px] hover:underline">FAQ</a>
         </div>
       </div>
     </footer>

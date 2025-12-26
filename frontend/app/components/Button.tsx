@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -8,10 +9,9 @@ interface ButtonProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
   icon?: React.ReactNode;
-  onClick?: () => void;
   className?: string;
-  disabled?: boolean;
   fullWidth?: boolean;
+  href: string;
 }
 
 export default function Button({
@@ -19,10 +19,9 @@ export default function Button({
   variant = 'primary',
   size = 'md',
   icon,
-  onClick,
   className = '',
-  disabled = false,
   fullWidth = false,
+  href,
 }: ButtonProps) {
   const baseClasses = 'rounded-lg font-medium transition-colors inline-flex items-center justify-center';
   
@@ -44,14 +43,13 @@ export default function Button({
   const primaryBgStyle = variant === 'primary' ? { backgroundColor: '#FFE552' } : {};
 
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
+    <Link
+      href={href}
       className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${widthClass} ${className}`}
       style={primaryBgStyle}
     >
       {children}
       {icon && <span className="ml-2">{icon}</span>}
-    </button>
+    </Link>
   );
 }

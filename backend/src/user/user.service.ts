@@ -1,64 +1,171 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { RegisterAdminDto } from './dto/register-admin.dto';
-import { RegisterReferentDto } from './dto/register-referent.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './auth.service';
-import { MailerService } from './mailer.service';
+import { EmailService } from '../common/email/email.service';
+
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import { LoginUserDto } from './dto/login-user.dto';
+import { UnauthorizedException } from '@nestjs/common';
+import { User, Establishment } from '@prisma/client';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly authService: AuthService,
-    private readonly mailerService: MailerService,
+    private readonly emailService: EmailService,
   ) { }
 
   async registerAdmin(registerAdminDto: RegisterAdminDto) {
     const { schoolName, email, lastname, firstname, password } = registerAdminDto;
     const existing = await this.prisma.user.findUnique({ where: { email } });
-    if (existing) throw new ConflictException('Cet email est déjà utilisé.');
+    if (existing) {
+      throw new ConflictException('Cet email est déjà utilisé.');
+    }
+
+    if (!schoolName) {
+      throw new ConflictException("Le nom de l'établissement est obligatoire pour créer un nouveau compte admin.");
+    }
+
     const alreadyExists = await this.prisma.establishment.findUnique({ where: { name: schoolName } });
-    if (alreadyExists) throw new ConflictException("Un établissement avec ce nom existe déjà.");
-    const establishment = await this.prisma.establishment.create({ data: { name: schoolName } });
+    if (alreadyExists) {
+      throw new ConflictException("Un établissement avec ce nom existe déjà.");
+    }
+    
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        lastname: lastname,
-        firstname: firstname,
-        password: hashedPassword,
-        role: 'ADMIN',
-        establishmentId: establishment.id,
-      },
+    const { establishment, user } = await this.prisma.$transaction(async (transaction: PrismaService) => {
+      const establishment = await transaction.establishment.create({ data: { name: schoolName } });
+      const user = await transaction.user.create({
+        data: {
+          id: uuidv4(),
+          email,
+          lastname: lastname,
+          firstname: firstname,
+          password: hashedPassword,
+          role: 'ADMIN',
+          establishmentId: establishment.id,
+        },
+      });
+      return { establishment, user };
     });
-    // await this.mailerService.sendUserConfirmation(user.email, user.firstname || user.lastname || user.email);
+    
     const jwt = await this.authService.generateJwt(user);
-    return { message: 'Administrateur créé', user, ...jwt };
+    
+    // Send welcome email
+    let emailStatus: 'sent' | 'failed' = 'sent';
+    let emailError: any = null;
+    try {
+      await this.emailService.sendWelcomeEmail(user.email, user.firstname, user.lastname);
+    } catch (error: any) {
+      emailStatus = 'failed';
+      emailError = error?.response || error?.message || 'Erreur inconnue';
+      console.error('⚠️ Erreur envoi email de bienvenue (registerAdmin):', emailError);
+    }
+    
+    return {
+      message: 'Admin enregistré avec succès',
+      access_token: jwt.access_token,
+      user: {
+        lastname: user.lastname,
+        firstname: user.firstname,
+        email: user.email,
+        role: user.role,
+        establishment: establishment.name,
+      },
+      emailStatus,
+      ...(emailError && { emailError }),
+    };
   }
 
-  async registerReferent(registerReferentDto: RegisterReferentDto) {
-    const { email, lastname, firstname, password, establishmentId } = registerReferentDto;
-    const existing = await this.prisma.user.findUnique({ where: { email } });
-    if (existing) throw new ConflictException('Cet email est déjà utilisé.');
-    const establishment = await this.prisma.establishment.findUnique({ where: { id: establishmentId } });
-    if (!establishment) throw new ConflictException("Établissement introuvable.");
+  async validateInvitationToken(token: string) {
+    const user = await this.prisma.user.findUnique({ 
+      where: { invitationToken: token },
+      include: { establishment: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Le lien d\'invitation est invalide ou a déjà été utilisé');
+    }
+
+    if (!user.invitationExpiry || user.invitationExpiry < new Date()) {
+      throw new UnauthorizedException('Le lien d\'invitation a expiré');
+    }
+
+    if (user.password && user.password !== '') {
+      throw new ConflictException('Cette invitation a déjà été utilisée');
+    }
+
+    return {
+      valid: true,
+      email: user.email,
+      role: user.role,
+      establishment: user.establishment.name,
+    };
+  }
+
+  async completeInvitation(invitationToken: string, email: string, firstname: string, lastname: string, password: string) {
+    const user = await this.prisma.user.findUnique({ 
+      where: { invitationToken },
+      include: { establishment: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Le lien d\'invitation est invalide ou a déjà été utilisé');
+    }
+
+    if (!user.invitationExpiry || user.invitationExpiry < new Date()) {
+      throw new UnauthorizedException('Le lien d\'invitation a expiré');
+    }
+
+    if (user.email !== email) {
+      throw new ConflictException('L\'email ne correspond pas à l\'invitation');
+    }
+
+    if (user.password && user.password !== '') {
+      throw new ConflictException('Cette invitation a déjà été utilisée');
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await this.prisma.user.create({
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
       data: {
-        email,
-        lastname: lastname,
-        firstname: firstname,
+        firstname,
+        lastname,
         password: hashedPassword,
-        role: 'REFERENT',
-        establishmentId,
+        invitationToken: null,
+        invitationExpiry: null,
       },
     });
-    // await this.mailerService.sendUserConfirmation(user.email, user.firstname || user.lastname || user.email);
-    const jwt = await this.authService.generateJwt(user);
-    return { message: 'Référent créé', user, ...jwt };
+
+    const jwt = await this.authService.generateJwt(updatedUser);
+
+    // Send welcome email
+    let emailStatus: 'sent' | 'failed' = 'sent';
+    let emailError: any = null;
+    try {
+      await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.firstname, updatedUser.lastname);
+    } catch (error: any) {
+      emailStatus = 'failed';
+      emailError = error?.response || error?.message || 'Erreur inconnue';
+      console.error('Erreur envoi email de bienvenue:', emailError);
+    }
+
+    return {
+      message: 'Inscription complétée avec succès',
+      access_token: jwt.access_token,
+      user: {
+        lastname: updatedUser.lastname,
+        firstname: updatedUser.firstname,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        establishment: user.establishment.name,
+      },
+      emailStatus,
+      ...(emailError && { emailError }),
+    };
   }
 
   async inviteUser(inviteUserDto: InviteUserDto, adminId: string) {
@@ -67,7 +174,12 @@ export class UserService {
     if (existing) throw new ConflictException('Cet email est déjà utilisé.');
     const admin = await this.prisma.user.findUnique({ where: { id: adminId } });
     if (!admin || !admin.establishmentId) throw new ConflictException("Impossible de trouver l'établissement de l'admin.");
+    const establishment = await this.prisma.establishment.findUnique({ where: { id: admin.establishmentId } });
+    if (!establishment) throw new ConflictException("Établissement introuvable.");
     const invitationToken = uuidv4();
+    const invitationExpiry = new Date();
+    invitationExpiry.setDate(invitationExpiry.getDate() + 7);
+    
     const user = await this.prisma.user.create({
       data: {
         email,
@@ -76,13 +188,322 @@ export class UserService {
         password: '',
         role,
         establishmentId: admin.establishmentId,
+        invitationToken,
+        invitationExpiry,
       },
     });
-    // await this.mailerService.sendInvitation(email, invitationToken, role);
-    return { message: 'Invitation envoyée', user, invitationToken };
+
+    // Send invitation email
+    await this.emailService.sendInvitationEmail(
+      email,
+      admin.firstname,
+      admin.lastname,
+      invitationToken,
+    );
+    
+    // Send confirmation email to admin
+    await this.emailService.sendInvitationConfirmationToAdmin(
+      admin.email,
+      admin.firstname,
+      admin.lastname,
+      email,
+    );
+    
+    return { 
+      message: 'Invitation envoyée', 
+      email: user.email,
+      role: user.role,
+      invitationToken,
+      establishmentId: user.establishmentId,
+    };
+  }
+
+  async login(loginUserDto: LoginUserDto) {
+    const { email, password } = loginUserDto;
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new UnauthorizedException('Identifiants invalides');
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Identifiants invalides');
+    }
+    const jwt = await this.authService.generateJwt(user);
+    // Get establishment name
+    const establishment = await this.prisma.establishment.findUnique({ 
+      where: { id: user.establishmentId } 
+    });
+    
+    return {
+      message: 'Connexion réussie',
+      access_token: jwt.access_token,
+      user: {
+        lastname: user.lastname,
+        firstname: user.firstname,
+        email: user.email,
+        role: user.role,
+        establishment: establishment?.name,
+      },
+    };
   }
 
   async getUsersByEstablishment(establishmentId: string) {
+    //protéger cette route dans le controller, seulement les admins et référents peuvent y accéder
     return this.prisma.user.findMany({ where: { establishmentId } });
+  }
+
+  async getAllUsers() {
+    //sécuriser la route
+    return this.prisma.user.findMany();
+  }
+
+  async updateUser(userId: string, updateData: { firstname?: string; lastname?: string; email?: string; establishmentName?: string }) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur introuvable');
+    }
+
+    // check for email uniqueness if email is being updated
+    if (updateData.email && updateData.email !== user.email) {
+      const existingUser = await this.prisma.user.findUnique({ where: { email: updateData.email } });
+      if (existingUser) {
+        throw new ConflictException('Cet email est déjà utilisé.');
+      }
+    }
+
+    // check for establishment name uniqueness if establishmentName is being updated
+    let currentEstablishment: Establishment | null = null;
+    if (updateData.establishmentName && user.role === 'ADMIN' && user.establishmentId) {
+      currentEstablishment = await this.prisma.establishment.findUnique({ 
+        where: { id: user.establishmentId } 
+      });
+      
+      // Only check for uniqueness if the name is actually changing
+      if (currentEstablishment && updateData.establishmentName !== currentEstablishment.name) {
+        const existingEstablishment = await this.prisma.establishment.findUnique({ 
+          where: { name: updateData.establishmentName } 
+        });
+        if (existingEstablishment) {
+          throw new ConflictException('Un établissement avec ce nom existe déjà.');
+        }
+      }
+    }
+    
+    let hasUserChanges = false;
+    let hasEstablishmentChanges = false;
+
+    // Check for user info changes
+    if ((updateData.firstname && updateData.firstname !== user.firstname) ||
+        (updateData.lastname && updateData.lastname !== user.lastname) ||
+        (updateData.email && updateData.email !== user.email)) {
+      hasUserChanges = true;
+    }
+
+    // Check for establishment name changes
+    if (updateData.establishmentName && user.role === 'ADMIN' && currentEstablishment) {
+      if (updateData.establishmentName !== currentEstablishment.name) {
+        hasEstablishmentChanges = true;
+      }
+    }
+
+    // if no changes detected, return early
+    if (!hasUserChanges && !hasEstablishmentChanges) {
+      const establishment = await this.prisma.establishment.findUnique({ 
+        where: { id: user.establishmentId } 
+      });
+      
+      return {
+        message: 'Aucune modification détectée',
+        user: {
+          lastname: user.lastname,
+          firstname: user.firstname,
+          email: user.email,
+          role: user.role,
+          establishmentName: establishment?.name,
+        },
+      };
+    }
+
+    // update establishment name if changed and user is ADMIN
+    if (hasEstablishmentChanges && user.establishmentId) {
+      await this.prisma.establishment.update({
+        where: { id: user.establishmentId },
+        data: { name: updateData.establishmentName },
+      });
+    }
+
+    // update user info if changed
+    let updatedUser = user;
+    if (hasUserChanges) {
+      updatedUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...(updateData.firstname && updateData.firstname !== user.firstname && { firstname: updateData.firstname }),
+          ...(updateData.lastname && updateData.lastname !== user.lastname && { lastname: updateData.lastname }),
+          ...(updateData.email && updateData.email !== user.email && { email: updateData.email }),
+        },
+      });
+    }
+
+    // fetch the possibly updated establishment name
+    const establishmentModified = await this.prisma.establishment.findUnique({ 
+      where: { id: updatedUser.establishmentId } 
+    });
+
+    return {
+      message: 'Informations mises à jour avec succès',
+      user: {
+        lastname: updatedUser.lastname,
+        firstname: updatedUser.firstname,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        establishment: establishmentModified?.name,
+      },
+    };
+  }
+
+  // Helper method to hash password and update user
+  private async hashAndUpdatePassword(userId: string, newPassword: string, additionalData?: any) {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+        ...additionalData,
+      },
+    });
+  }
+
+  async updatePassword(userId: string, oldPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur introuvable');
+    }
+
+    // Check if old password is correct
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Ancien mot de passe incorrect');
+    }
+
+    await this.hashAndUpdatePassword(userId, newPassword);
+
+    return {
+      message: 'Mot de passe modifié avec succès',
+    };
+  }
+
+  async requestPasswordReset(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return {
+        message: 'Si cet email existe, un lien de réinitialisation a été envoyé',
+        emailStatus: 'not_sent' as const,
+      };
+    }
+
+    const resetToken = uuidv4();
+    const resetExpiry = new Date();
+    resetExpiry.setHours(resetExpiry.getHours() + 1); // Token valide 1 heure
+
+    await this.prisma.user.update({
+      where: { email },
+      data: {
+        resetPasswordToken: resetToken,
+        resetPasswordExpiry: resetExpiry,
+      },
+    });
+
+    let emailStatus: 'sent' | 'failed' = 'sent';
+    let emailError: any = null;
+    try {
+      await this.emailService.sendPasswordResetEmail(email, resetToken);
+    } catch (error: any) {
+      emailStatus = 'failed';
+      emailError = error?.response || error?.message || 'Erreur inconnue';
+      console.error('Erreur envoi email de reset password:', emailError);
+    }
+
+    return {
+      message: 'Si cet email existe, un lien de réinitialisation a été envoyé',
+      emailStatus,
+      ...(emailError && { emailError }),
+    };
+  }
+
+  async validateResetPasswordToken(token: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { resetPasswordToken: token },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Le lien de réinitialisation est invalide ou a déjà été utilisé');
+    }
+
+    if (!user.resetPasswordExpiry || user.resetPasswordExpiry < new Date()) {
+      throw new UnauthorizedException('Le lien de réinitialisation a expiré');
+    }
+
+    return {
+      valid: true,
+      email: user.email,
+    };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { resetPasswordToken: token },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Le lien de réinitialisation est invalide ou a déjà été utilisé');
+    }
+
+    if (!user.resetPasswordExpiry || user.resetPasswordExpiry < new Date()) {
+      throw new UnauthorizedException('Le lien de réinitialisation a expiré');
+    }
+
+    await this.hashAndUpdatePassword(user.id, newPassword, {
+      resetPasswordToken: null,
+      resetPasswordExpiry: null,
+    });
+
+    return {
+      message: 'Mot de passe réinitialisé avec succès',
+    };
+  }
+
+  async deleteAccount(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur introuvable');
+    }
+
+    // Only ADMIN can delete their establishment along with their account
+    if (user.role !== 'ADMIN') {
+      throw new UnauthorizedException('Seul un administrateur peut supprimer son établissement');
+    }
+
+    if (!user.establishmentId) {
+      throw new ConflictException('Aucun établissement associé à cet administrateur');
+    }
+
+    // Delete user and establishment in a transaction
+    await this.prisma.$transaction(async (transaction: PrismaService) => {
+      // Delete all users associated with the establishment
+      await transaction.user.deleteMany({
+        where: { establishmentId: user.establishmentId },
+      });
+
+      // Delete the establishment
+      await transaction.establishment.delete({
+        where: { id: user.establishmentId },
+      });
+    });
+
+    return {
+      message: 'Compte et établissement supprimés avec succès',
+    };
   }
 }

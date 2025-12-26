@@ -1,19 +1,29 @@
-import { Injectable } from '@nestjs/common';
-import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
+// import { Injectable } from '@nestjs/common';
+// import * as nodemailer from 'nodemailer';
 
-@Injectable()
-export class MailerService {
-  constructor(private readonly mailerService: NestMailerService) { }
+// @Injectable()
+// export class MailerService {
+//   private transporter;
 
-  async sendUserConfirmation(email: string, name: string) {
-    await this.mailerService.sendMail({
-      to: email,
-      subject: 'Confirmation d’inscription IZZZI',
-      template: './confirmation',
-      context: {
-        name,
-      },
-      text: `Bienvenue sur IZZZI, ${name} ! Votre inscription est confirmée.`,
-    });
-  }
-}
+//   constructor() {
+//     this.transporter = nodemailer.createTransport({
+//       host: process.env.SMTP_HOST || 'smtp.example.com',
+//       port: parseInt(process.env.SMTP_PORT || '587'),
+//       secure: false,
+//       auth: {
+//         user: process.env.SMTP_USER || 'user@example.com',
+//         pass: process.env.SMTP_PASS || 'password',
+//       },
+//     });
+//   }
+
+//   async sendUserConfirmation(email: string, name: string) {
+//     await this.transporter.sendMail({
+//       from: 'IZZZI <no-reply@izzzi.com>',
+//       to: email,
+//       subject: 'Bienvenue sur IZZZI',
+//       text: `Bienvenue ${name} sur IZZZI !`,
+//       html: `<p>Bienvenue <b>${name}</b> sur IZZZI !</p>`,
+//     });
+//   }
+// }
