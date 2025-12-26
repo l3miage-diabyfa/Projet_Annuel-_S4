@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getTokenCookie, removeTokenCookie } from "@/utils/cookie";
 import Link from "next/link";
 import InputField from "@/components/shared/InputField";
 import { FiArrowUpRight, FiBell, FiCheck, FiEdit2, FiDownload, FiCalendar } from "react-icons/fi";
+import { useUser } from "@/contexts/UserContext";
+import { apiFetch } from "@/utils/api";
 
 // Type pour les factures
 interface Invoice {
@@ -18,13 +22,54 @@ export default function DashboardPage() {
   // Simuler si l'utilisateur s'est inscrit manuellement (true) ou via OAuth (false)
   const [isManualSignup] = useState(true);
   
+  const router = useRouter();
+  const { user, setUser, logout: logoutUser } = useUser();
+  
+  useEffect(() => {
+    const token = getTokenCookie();
+    if (!token) {
+      router.replace("/auth/signin");
+    }
+  }, [router]);
+
   const [userInfo, setUserInfo] = useState({
-    firstName: "alcini",
-    lastName: "kathleen",
-    email: "kathleen.alcini@jedy.fr",
-    establishment: "Digital campus",
+    firstName: "",
+    lastName: "",
+    email: "",
+    establishment: "",
     profileImage: null as string | null,
+    role: "",
   });
+
+  // State séparé pour le formulaire d'édition
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    establishment: "",
+  });
+
+  // Hydrater userInfo depuis le Context
+  useEffect(() => {
+    if (user) {
+      const userData = {
+        firstName: user.firstname || "",
+        lastName: user.lastname || "",
+        email: user.email || "",
+        establishment: user.establishment || "",
+        profileImage: null,
+        role: user.role || "",
+      };
+      setUserInfo(userData);
+      // Initialiser aussi le formulaire
+      setFormData({
+        firstName: user.firstname || "",
+        lastName: user.lastname || "",
+        email: user.email || "",
+        establishment: user.role === "ADMIN" ? user.establishment || "" : "",
+      });
+    }
+  }, [user]);
 
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: "",
@@ -66,39 +111,135 @@ export default function DashboardPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUserInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUserInfo({ ...userInfo, [e.target.name]: e.target.value });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
   };
 
-  const handleUpdateInfo = (e: React.FormEvent) => {
+  const handleUpdateInfo = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Mise à jour des informations:", userInfo);
-    alert("Informations mises à jour avec succès !");
+    const token = getTokenCookie();
+    if (!token) {
+      alert("Vous devez être connecté pour modifier vos informations");
+      return;
+    }
+
+    const { data, error } = await apiFetch<{
+      message: string;
+      user: {
+        firstname: string;
+        lastname: string;
+        email: string;
+        role: string;
+        establishment?: string;
+      };
+    }>(
+      "/user/update",
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: {
+          firstname: formData.firstName,
+          lastname: formData.lastName,
+          email: formData.email,
+          ...(userInfo.role === "ADMIN" && formData.establishment ? { establishmentName: formData.establishment } : {}),
+        },
+      }
+    );
+
+    if (data && data.user) {
+      // Mettre à jour le Context avec les nouvelles infos
+      setUser(data.user);
+      alert(data.message || "Informations mises à jour avec succès !");
+    } else {
+      alert(error || "Erreur lors de la mise à jour des informations");
+    }
   };
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       alert("Les mots de passe ne correspondent pas");
       return;
     }
-    console.log("Mise à jour du mot de passe");
-    alert("Mot de passe modifié avec succès !");
-    setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+
+    if (passwordForm.oldPassword === passwordForm.newPassword) {
+      alert("Le nouveau mot de passe doit être différent de l'ancien");
+      return;
+    }
+
+    const token = getTokenCookie();
+    if (!token) {
+      alert("Vous devez être connecté pour modifier votre mot de passe");
+      return;
+    }
+
+    const { data, error } = await apiFetch<{ message: string }>(
+      "/user/password",
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: {
+          oldPassword: passwordForm.oldPassword,
+          newPassword: passwordForm.newPassword,
+        },
+      }
+    );
+
+    if (data) {
+      alert(data.message || "Mot de passe modifié avec succès !");
+      setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    } else {
+      alert(error || "Erreur lors de la modification du mot de passe");
+    }
   };
 
   const handleLogout = () => {
-    console.log("Déconnexion");
-    alert("Déconnexion réussie");
+    removeTokenCookie();
+    logoutUser();
+    router.replace("/auth/signin");
   };
 
-  const handleDeleteAccount = () => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.")) {
-      console.log("Suppression du compte");
-      alert("Compte supprimé");
+  const handleDeleteAccount = async () => {
+    if (userInfo.role !== "ADMIN") {
+      alert("Seul un administrateur peut supprimer son établissement et tous les comptes associés.");
+      return;
+    }
+
+    if (!confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action supprimera définitivement votre établissement et tous les utilisateurs associés. Cette action est irréversible.")) {
+      return;
+    }
+
+    const token = getTokenCookie();
+    if (!token) {
+      alert("Vous devez être connecté pour supprimer votre compte");
+      return;
+    }
+
+    const { data, error } = await apiFetch<{ message: string }>(
+      "/user/account",
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (data) {
+      alert(data.message || "Compte supprimé avec succès");
+      // Déconnexion et redirection
+      removeTokenCookie();
+      logoutUser();
+      router.replace("/auth/signin");
+    } else {
+      alert(error || "Erreur lors de la suppression du compte");
     }
   };
 
@@ -114,13 +255,13 @@ export default function DashboardPage() {
         alert('Veuillez sélectionner une image valide');
         return;
       }
-      
+
       // Vérifier la taille (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('L\'image ne doit pas dépasser 5MB');
         return;
       }
-      
+
       // Créer une URL locale pour prévisualiser l'image
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -141,8 +282,8 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-8 py-8">
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="inline-flex items-center gap-2 text-gray-600 hover:text-black mb-6 transition-colors"
         >
           ← Retour
@@ -166,7 +307,7 @@ export default function DashboardPage() {
                       KA
                     </div>
                   )}
-                  <button 
+                  <button
                     onClick={handleProfileImageClick}
                     className="absolute bottom-0 right-0 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center hover:bg-yellow-500 transition-colors"
                     title="Modifier la photo de profil"
@@ -197,66 +338,68 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            {/* Billing Management */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-bold mb-4">Gérer la facturation</h3>
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <FiCheck className="w-4 h-4 text-green-600" />
-                  <span>Gère tes informations de paiement</span>
+            {/* Billing Management - Uniquement pour les ADMIN */}
+            {userInfo.role === "ADMIN" && (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <h3 className="text-lg font-bold mb-4">Gérer la facturation</h3>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <FiCheck className="w-4 h-4 text-green-600" />
+                    <span>Gère tes informations de paiement</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <FiCheck className="w-4 h-4 text-green-600" />
+                    <span>Télécharge tes factures</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <FiCheck className="w-4 h-4 text-green-600" />
+                    <span>Arrête ton abonnement</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <FiCheck className="w-4 h-4 text-green-600" />
-                  <span>Télécharge tes factures</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <FiCheck className="w-4 h-4 text-green-600" />
-                  <span>Arrête ton abonnement</span>
-                </div>
-              </div>
-              
-              {showInvoices && (
-                <div className="border-t pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm mb-3">Mes factures</h4>
-                  {invoices.length > 0 ? (
-                    invoices.map((invoice) => (
-                      <div
-                        key={invoice.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FiCalendar className="w-4 h-4 text-gray-500" />
-                          <div>
-                            <div className="text-sm font-medium">{invoice.id}</div>
-                            <div className="text-xs text-gray-500">{invoice.date}</div>
+
+                {showInvoices && (
+                  <div className="border-t pt-4 space-y-3">
+                    <h4 className="font-semibold text-sm mb-3">Mes factures</h4>
+                    {invoices.length > 0 ? (
+                      invoices.map((invoice) => (
+                        <div
+                          key={invoice.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FiCalendar className="w-4 h-4 text-gray-500" />
+                            <div>
+                              <div className="text-sm font-medium">{invoice.id}</div>
+                              <div className="text-xs text-gray-500">{invoice.date}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-sm font-semibold">{invoice.amount}€</div>
+                            <button
+                              onClick={() => handleDownloadInvoice(invoice)}
+                              className="p-2 hover:bg-yellow-400 rounded-lg transition-colors"
+                              title="Télécharger la facture"
+                            >
+                              <FiDownload className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-sm font-semibold">{invoice.amount}€</div>
-                          <button
-                            onClick={() => handleDownloadInvoice(invoice)}
-                            className="p-2 hover:bg-yellow-400 rounded-lg transition-colors"
-                            title="Télécharger la facture"
-                          >
-                            <FiDownload className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500 text-center py-4">Aucune facture disponible</p>
-                  )}
-                </div>
-              )}
-              
-              <Link
-                href="/billing"
-                className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-black transition-colors mt-4 border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50"
-              >
-                Accéder au tableau de bord
-                <FiArrowUpRight className="w-4 h-4" />
-              </Link>
-            </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 text-center py-4">Aucune facture disponible</p>
+                    )}
+                  </div>
+                )}
+
+                <Link
+                  href="/billing"
+                  className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-black transition-colors border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50"
+                >
+                  Accéder au tableau de bord
+                  <FiArrowUpRight className="w-4 h-4" />
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Right Content Area */}
@@ -272,7 +415,7 @@ export default function DashboardPage() {
                     name="firstName"
                     type="text"
                     placeholder="Entrez votre prénom"
-                    value={userInfo.firstName}
+                    value={formData.firstName}
                     onChange={handleUserInfoChange}
                   />
                   <InputField
@@ -280,27 +423,29 @@ export default function DashboardPage() {
                     name="lastName"
                     type="text"
                     placeholder="Entrez votre nom"
-                    value={userInfo.lastName}
+                    value={formData.lastName}
                     onChange={handleUserInfoChange}
                   />
-                  
+
                   <InputField
                     label="Email"
                     name="email"
                     type="email"
                     placeholder="Entrez votre email"
-                    value={userInfo.email}
+                    value={formData.email}
                     onChange={handleUserInfoChange}
                   />
 
-                  <InputField
-                    label="Établissement"
-                    name="establishment"
-                    type="text"
-                    placeholder="Entrez votre établissement"
-                    value={userInfo.establishment}
-                    onChange={handleUserInfoChange}
-                  />
+                  {userInfo.role === "ADMIN" && (
+                    <InputField
+                      label="Établissement"
+                      name="establishment"
+                      type="text"
+                      placeholder="Entrez votre établissement"
+                      value={formData.establishment}
+                      onChange={handleUserInfoChange}
+                    />
+                  )}
 
                   <button
                     type="submit"
@@ -328,7 +473,7 @@ export default function DashboardPage() {
                         onChange={handlePasswordChange}
                         required
                       />
-                      
+
                       <InputField
                         label="Nouveau"
                         name="newPassword"
@@ -359,28 +504,30 @@ export default function DashboardPage() {
                     </form>
                   </div>
                 )}
-                
+
                 {!isManualSignup && (
                   <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                     <h3 className="text-lg font-bold mb-4">Modifier mon mot de passe</h3>
                     <p className="text-gray-600 text-sm">
-                      Vous vous êtes connecté via un fournisseur tiers (Google, Facebook, etc.). 
+                      Vous vous êtes connecté via un fournisseur tiers (Google, Facebook, etc.).
                       La modification du mot de passe doit être effectuée directement auprès de votre fournisseur d'identité.
                     </p>
                   </div>
                 )}
 
-                {/* Delete Account */}
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-red-200">
-                  <h3 className="text-lg font-bold mb-4">Supprimer mon compte et toutes mes données</h3>
-                  <button
-                    onClick={handleDeleteAccount}
-                    className="text-gray-700 hover:text-red-600 transition-colors inline-flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 hover:bg-red-50"
-                  >
-                    Je supprime mon compte
-                    <FiArrowUpRight className="w-4 h-4" />
-                  </button>
-                </div>
+                {/* Delete Account for Admin only */}
+                {userInfo.role === "ADMIN" && (
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-red-200">
+                    <h3 className="text-lg font-bold mb-4">Supprimer mon compte et toutes mes données</h3>
+                    <button
+                      onClick={handleDeleteAccount}
+                      className="text-gray-700 hover:text-red-600 transition-colors inline-flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 hover:bg-red-50"
+                    >
+                      Je supprime mon compte
+                      <FiArrowUpRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

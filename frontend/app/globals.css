@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Istok+Web:ital,wght@0,400;0,700;1,400;1,700&family=Mochiy+Pop+One&family=Roboto:wght@500&display=swap");
 @import "tailwindcss";
 
 /* Custom slider styles */
@@ -19,7 +20,7 @@ input[type="range"].slider::-webkit-slider-thumb {
   border-radius: 50%;
   border: 2px solid #ea580c;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 input[type="range"].slider::-moz-range-thumb {
@@ -29,9 +30,9 @@ input[type="range"].slider::-moz-range-thumb {
   border-radius: 50%;
   border: 2px solid #ea580c;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
-@import url('https://fonts.googleapis.com/css2?family=Istok+Web:ital,wght@0,400;0,700;1,400;1,700&family=Mochiy+Pop+One&family=Roboto:wght@500&display=swap');
+
 :root {
   --background: #f4f4f4;
   --foreground: #171717;
@@ -63,6 +64,16 @@ input[type="range"].slider::-moz-range-thumb {
   --font-mono: var(--font-geist-mono);
   --font-mochiy: "Mochiy Pop One", sans-serif;
   --font-text: var(--font-text);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: #d9d9d9;
+  }
 }
 
 body {
@@ -105,6 +116,7 @@ body {
 .button-text {
   @apply bg-transparent text-gray-900 py-4 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors;
 }
+
 /* Classe spécifique pour les titres avec police Mochiy */
 .title-mochiy {
   font-family: var(--font-mochiy), "Mochiy Pop One", cursive;
@@ -122,6 +134,7 @@ button {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;

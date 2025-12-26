@@ -29,17 +29,17 @@ export default function Footer() {
               <h3 className="text-white font-mochiy mb-4 text-[16px]">Plan du site</h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="text-white text-[16px] hover:underline">
+                  <a href="/tarifs" className="text-white text-[16px] hover:underline">
                     Nos tarifs
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white text-[16px] hover:underline">
+                  <a href="/auth/signup" className="text-white text-[16px] hover:underline">
                     S&apos;inscrire
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white text-[16px] hover:underline">
+                  <a href="/auth/signin" className="text-white text-[16px] hover:underline">
                     Se connecter
                   </a>
                 </li>
