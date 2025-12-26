@@ -6,7 +6,7 @@ import { BiChevronRight } from "react-icons/bi";
 
 export default function Hero() {
   return (
-    <section className="relative pb-62 px-6 overflow-hidden">
+    <section className="relative pt-20 pb-62 px-6 overflow-hidden">
       <div className="max-w-7xl mx-auto pt-20">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="relative z-10">
@@ -46,8 +46,8 @@ export default function Hero() {
             </button>
 
             <p className="mt-4 text-sm text-gray">
-              Et oui, lancez-vous! C&apos;est gratuit et aucune carte bancaire n&apos;est
-              demandée
+              Et oui, lancez-vous! C&apos;est gratuit et aucune carte bancaire
+              n&apos;est demandée
             </p>
 
             <Image

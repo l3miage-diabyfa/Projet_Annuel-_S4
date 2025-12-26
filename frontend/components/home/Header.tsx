@@ -12,6 +12,7 @@ export default function Header() {
 
   return (
     <header className="w-full">
+      {" "}
       <div className="max-w-[98vw] fixed top-4 left-0 right-0 mx-auto md:max-w-7xl bg-white rounded-2xl shadow-sm px-8 py-4 flex items-center justify-between sm:px-6 md:px-2 z-50">
         {/* Logo */}
         <div className="flex items-center gap-2">
@@ -30,14 +31,6 @@ export default function Header() {
 
         {/* Navigation Desktop */}
         <nav className="hidden md:flex items-center gap-3 lg:gap-4">
-          {/* NEW: Classes Link */}
-          <Link
-            href="/classes"
-            className="whitespace-nowrap button-text flex items-center justify-center"
-          >
-            Classes
-          </Link>
-          
           <Link
             href="/tarifs"
             className="whitespace-nowrap button-text flex items-center justify-center"
@@ -45,7 +38,7 @@ export default function Header() {
             Nos tarifs
           </Link>
           <Link
-            href="#"
+            href="/auth/signup"
             className="whitespace-nowrap button-primary !w-full flex items-center justify-center"
           >
             S&apos;inscrire
@@ -73,30 +66,19 @@ export default function Header() {
           )}
         </button>
       </div>
-
       {/* Mobile Menu */}
       {isMenuOpen && (
         <>
-          {/* Overlay */}
+          {/* Overlay avec animation */}
           <div
             className="fixed inset-0 bg-black/30 z-40 md:hidden animate-fade-in backdrop-blur-sm"
             onClick={closeMenu}
           />
 
-          {/* Menu Panel */}
+          {/* Menu Panel avec animation */}
           <nav className="fixed top-24 left-4 right-4 mx-auto max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-xl p-8 z-50 md:hidden flex flex-col gap-3 animate-slide-down border border-gray-100">
-            {/* NEW: Classes Link in Mobile Menu */}
             <Link
-              href="/classes"
-              className="button-text flex items-center justify-center w-full transform transition-all duration-200 hover:scale-105 py-3 rounded-xl"
-              onClick={closeMenu}
-            >
-              Classes
-            </Link>
-            <div className="h-px bg-gray-100 my-1"></div>
-            
-            <Link
-              href="#"
+              href="/tarifs"
               className="button-text flex items-center justify-center w-full transform transition-all duration-200 hover:scale-105 py-3 rounded-xl"
               onClick={closeMenu}
             >
@@ -122,7 +104,6 @@ export default function Header() {
           </nav>
         </>
       )}
-
       {/* Styles pour les animations */}
       <style jsx>{`
         @keyframes fadeIn {
