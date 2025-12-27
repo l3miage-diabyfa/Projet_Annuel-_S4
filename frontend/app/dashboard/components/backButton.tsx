@@ -5,11 +5,12 @@ import { IoArrowBack } from "react-icons/io5";
 interface BackButtonProps {
   text: string;
   href: string;
+  className?: string;
 }
 
-export default function BackButton({ text, href }: BackButtonProps) {
+export default function BackButton({ text, href, className }: BackButtonProps) {
   return (
-    <header className="px-6 py-4">
+    <header className={`px-6 py-4 ${className}`}>
       <Link
         href={href}
         className="flex items-center gap-4 text-gray-700 hover:text-gray-900 transition-colors"

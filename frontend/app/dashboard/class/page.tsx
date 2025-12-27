@@ -2,14 +2,35 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { FiSearch, FiPlus, FiArrowUpRight, FiEye } from "react-icons/fi";
+import { FiSearch, FiPlus, FiArrowUpRight } from "react-icons/fi";
 import TrialBanner from "../components/TrialBanner";
+import ClassCard from "./components/ClassCard";
+import {
+  AddClassModal,
+  EditClassModal,
+  ArchiveClassModal,
+  LimitReachedModal,
+} from "./components/ClassModals";
 
 export default function ClassPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Données simulées pour les classes
-  const classes = [
+  // Modal states
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+
+  // Selection state
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
+  const [editingClass, setEditingClass] = useState<any>(null); // Type 'any' for simplicity with mock data, or define proper interface
+
+  // Hardcoded limit check for demo
+  const MAX_CLASSES = 5;
+  const isAdmin = true; // Toggle to test admin vs non-admin limit modal
+
+  // Données simulées pour les classes (normally fetched)
+  const [classes, setClasses] = useState([
     {
       id: 1,
       name: "M2DG",
@@ -23,14 +44,77 @@ export default function ClassPage() {
       students: 24,
     },
     { id: 3, name: "B2FG", description: "En alternance", students: 24 },
-  ];
+  ]);
 
   const filteredClasses = classes.filter((cls) =>
     cls.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Handlers
+  const handleAddClick = () => {
+    if (classes.length >= MAX_CLASSES) {
+      setIsLimitModalOpen(true);
+    } else {
+      setIsAddModalOpen(true);
+    }
+  };
+
+  const handleAddSubmit = (data: any) => {
+    console.log("Adding class:", data);
+    // Add logic here
+    const newClass = {
+      id: classes.length + 1,
+      name: data.name,
+      description: data.description,
+      students: parseInt(data.students) || 0,
+    };
+    setClasses([...classes, newClass]);
+    setIsAddModalOpen(false);
+  };
+
+  const handleEditClick = (cls: any) => {
+    setEditingClass({
+      ...cls,
+      emails: "", // Mock data doesn't have emails, so empty
+      students: cls.students.toString(),
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = (data: any) => {
+    console.log("Editing class:", data);
+    // Update logic here
+    setClasses(
+      classes.map((c) =>
+        c.id === editingClass.id
+          ? {
+              ...c,
+              name: data.name,
+              description: data.description,
+              students: parseInt(data.students),
+            }
+          : c
+      )
+    );
+    setIsEditModalOpen(false);
+    setEditingClass(null);
+  };
+
+  const handleArchiveClick = (id: number) => {
+    setSelectedClassId(id);
+    setIsArchiveModalOpen(true);
+  };
+
+  const handleArchiveConfirm = () => {
+    console.log("Archiving class:", selectedClassId);
+    // Archive logic here (e.g. remove from list)
+    setClasses(classes.filter((c) => c.id !== selectedClassId));
+    setIsArchiveModalOpen(false);
+    setSelectedClassId(null);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
+    <div className="min-h-screen pb-12">
       <div className="mx-auto px-6 py-8 space-y-8">
         {/* Banner "Période d'essai" */}
         <TrialBanner />
@@ -42,7 +126,7 @@ export default function ClassPage() {
               {classes.length} classes disponibles
             </h1>
             <p className="text-gray-500 text-sm">
-              Vous pouvez ajouter jusqu'à 5 classes.
+              Vous pouvez ajouter jusqu'à {MAX_CLASSES} classes.
             </p>
           </div>
 
@@ -60,7 +144,10 @@ export default function ClassPage() {
             </div>
 
             {/* Add Button */}
-            <button className="bg-primary-yellow hover:bg-yellow-400 text-gray-900 font-medium px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors whitespace-nowrap w-full sm:w-auto cursor-pointer">
+            <button
+              onClick={handleAddClick}
+              className="bg-primary-yellow hover:bg-yellow-400 text-gray-900 font-medium px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors whitespace-nowrap w-full sm:w-auto cursor-pointer"
+            >
               Ajouter une classe <FiPlus className="w-5 h-5" />
             </button>
           </div>
@@ -69,59 +156,56 @@ export default function ClassPage() {
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClasses.map((cls) => (
-            <Link
-              href={`/dashboard/class/${cls.id}`}
+            <ClassCard
               key={cls.id}
-              className="bg-white rounded-xl p-6 border border-gray-100 flex flex-col justify-between min-h-[180px] group hover:border-gray-300 focus:ring-2 focus:ring-primary-yellow outline-none cursor-pointer group"
-              style={{ textDecoration: "none" }}
-              aria-label={`Voir la classe ${cls.name}`}
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">
-                    {cls.name}
-                  </h3>
-                  <p className="text-xs text-gray-500 mb-0 font-medium">
-                    {cls.description}
-                  </p>
-                  <p className="text-xs font-bold text-gray-900 mt-1">
-                    {cls.students} étudiants
-                  </p>
-                </div>
-                <span
-                  className="bg-primary-yellow w-10 h-10 rounded-full flex items-center justify-center hover:bg-yellow-400 group-hover:rotate-45 transition-all shrink-0"
-                  aria-label="Voir la classe"
-                >
-                  <FiArrowUpRight className="w-5 h-5 text-gray-900" />
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between mt-auto pt-4">
-                <span className="flex items-center gap-2 text-xs text-gray-600 group-hover:text-gray-900 font-medium underline">
-                  <FiEye className="w-3.5 h-3.5" /> voir la classe
-                </span>
-                <button
-                  className="text-xs text-gray-500 hover:text-gray-700 underline decoration-gray-300"
-                  tabIndex={-1}
-                  onClick={(e) => e.preventDefault()}
-                >
-                  Archiver
-                </button>
-              </div>
-            </Link>
+              cls={cls}
+              onEdit={handleEditClick}
+              onArchive={handleArchiveClick}
+            />
           ))}
         </div>
 
         {/* Footer Link */}
         <div className="pt-2">
           <Link
-            href="/dashboard/classes/archived" // Assuming this path or similar
+            href="/dashboard/classes/archived"
             className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
           >
             Voir les classes archivées <FiArrowUpRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
+
+      {/* Modals */}
+      <AddClassModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddSubmit}
+      />
+
+      {editingClass && (
+        <EditClassModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingClass(null);
+          }}
+          onSubmit={handleEditSubmit}
+          initialData={editingClass}
+        />
+      )}
+
+      <ArchiveClassModal
+        isOpen={isArchiveModalOpen}
+        onClose={() => setIsArchiveModalOpen(false)}
+        onConfirm={handleArchiveConfirm}
+      />
+
+      <LimitReachedModal
+        isOpen={isLimitModalOpen}
+        onClose={() => setIsLimitModalOpen(false)}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 }
