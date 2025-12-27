@@ -107,7 +107,7 @@ export default function PricingPage() {
               <span className="text-lg font-normal text-black"> / mois</span>
             </div>
 
-            <Button fullWidth icon="↗" className="mb-8">
+            <Button href="/auth/signup" fullWidth icon="↗" className="mb-8">
               Démarrer mes 4 mois gratuits
             </Button>
 
@@ -127,7 +127,7 @@ export default function PricingPage() {
               </ul>
             </div>
 
-            <Button variant="outline" fullWidth icon="↗" className="mt-8">
+            <Button href="#" variant="outline" fullWidth icon="↗" className="mt-8">
               Voir les détails du plan
             </Button>
           </div>
@@ -174,16 +174,14 @@ export default function PricingPage() {
                   {isAnnual ? '17€' : '22€'}
                   <span className="text-lg font-normal text-black opacity-80"> par mois / par classe</span>
                 </div>
-                <Button fullWidth icon="↗" className="mb-8">
+                <Button href="/auth/signup" fullWidth icon="↗" className="mb-8">
                   Je passe en mode illimité
                 </Button>
               </>
             ) : (
-              <Link href="/contact" className="block">
-                <Button fullWidth icon="↗" className="mb-8">
-                  Demander une offre sur mesure
-                </Button>
-              </Link>
+              <Button href="/contact" fullWidth icon="↗" className="mb-8">
+                Demander une offre sur mesure
+              </Button>
             )}
 
             <div className="mb-6">
@@ -193,7 +191,7 @@ export default function PricingPage() {
 
             <FeatureList features={premiumFeatures} className="text-sm" />
 
-            <Button variant="outline" fullWidth icon="↗" className="mt-8">
+            <Button href="#" variant="outline" fullWidth icon="↗" className="mt-8">
               Voir les détails du plan
             </Button>
           </div>
@@ -222,7 +220,7 @@ export default function PricingPage() {
             <button className="border-2 border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white hover:text-orange-500 transition-colors">
               hello@izzzi.io
             </button>
-            <Button icon="↗">
+            <Button href="/contact" icon="↗">
               Nous contacter
             </Button>
           </div>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/utils/verifyToken";
 
 // Liste des routes protégées
-const protectedRoutes = ["/dashboard"];
+const protectedRoutes = ["/dashboard", "/pricing/checkout", "/pricing/confirmation"];
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -32,5 +32,5 @@ export async function middleware(request: NextRequest) {
 
 
 export const config = {
-    matcher: ["/dashboard/:path*"],
+    matcher: ["/dashboard/:path*", "/pricing/checkout", "/pricing/confirmation"],
 };

@@ -35,9 +35,14 @@ model User {
   profilePic     String?
   subscriptionId String?
   establishmentId String
-  role           Role     @default(TEACHER)
+  role            Role     @default(TEACHER)
+  invitationToken  String?  @unique
+  invitationExpiry DateTime?
+  resetPasswordToken  String?  @unique
+  resetPasswordExpiry DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  reviews        Review[]
 
   // Relations
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
@@ -81,9 +86,11 @@ model Class {
   academicYear String
   gradeLevel   String
   isActive     Boolean  @default(true)
-  teacherId   String
+  teacherId    String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  subjects     Subject[]
+  reviewForms  ReviewForm[]
 
   // Relations
   teacher User      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
@@ -104,6 +111,24 @@ model Enrollment {
   @@unique([classId, studentId])
 }
 
+model Subject {
+  id                String    @id @default(uuid())
+  name              String    // Matiere_nom
+  instructorName    String?   // Intervenant_nom
+  instructorEmail   String?   // Intervenant_email
+  firstLessonDate   DateTime? // Date_premier_cours
+  lastLessonDate    DateTime? // Date_dernier_cours
+  classId           String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  reviewForms       ReviewForm[]
+
+  // Relations
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([classId])
+}
+
 model Lesson {
   id          String   @id @default(uuid())
   title       String
@@ -120,4 +145,91 @@ model Lesson {
   @@index([teacherId])
   // Relations
   @@index([classId])
+}
+
+// Review Form Template (created by teachers)
+model ReviewForm {
+  id          String   @id @default(uuid())
+  title       String   // e.g., "Évaluation durant le cours"
+  type        ReviewFormType // DURING_CLASS or AFTER_CLASS
+  classId     String
+  subjectId   String?  // Optional: specific to a subject
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject     Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  fields      ReviewFormField[]
+  reviews     Review[]
+
+  @@index([classId])
+  @@index([subjectId])
+}
+
+enum ReviewFormType {
+  DURING_CLASS
+  AFTER_CLASS
+}
+
+// Form Fields (stars, radio, checkbox, textarea)
+model ReviewFormField {
+  id          String   @id @default(uuid())
+  formId      String
+  label       String   // e.g., "Comment évaluez-vous le cours ?"
+  type        FieldType
+  required    Boolean  @default(false)
+  options     Json?    // For radio/checkbox: ["Excellent", "Bon", "Moyen", "Faible"]
+  order       Int      // Display order
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  form        ReviewForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  responses   ReviewResponse[]
+
+  @@index([formId])
+}
+
+enum FieldType {
+  STARS       // 1-5 stars rating
+  RADIO       // Single choice
+  CHECKBOX    // Multiple choices
+  TEXTAREA    // Free text
+}
+
+// Student Review Submission
+model Review {
+  id          String   @id @default(uuid())
+  formId      String
+  studentId   String?  // Optional: anonymous reviews allowed
+  sessionId   String?  // Track anonymous users
+  publicLink  String   @unique // UUID for public access
+  submittedAt DateTime @default(now())
+  ipAddress   String?  // For spam prevention
+
+  // Relations
+  form        ReviewForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  student     User?      @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  responses   ReviewResponse[]
+
+  @@index([formId])
+  @@index([studentId])
+}
+
+// Individual Field Responses
+model ReviewResponse {
+  id          String   @id @default(uuid())
+  reviewId    String
+  fieldId     String
+  value       Json     // Stores: number (stars), string (radio/textarea), string[] (checkbox)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  review      Review    @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  field       ReviewFormField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@index([fieldId])
 }
