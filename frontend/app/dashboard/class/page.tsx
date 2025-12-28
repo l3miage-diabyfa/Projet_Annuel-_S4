@@ -96,6 +96,7 @@ setClasses(classesData);
         academicYear: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1), // Default
         gradeLevel: 'Non spécifié', // Default
         teacherId: currentUserId,
+        studentEmails: data.emails || undefined, // Sends student an email
       });
       
       await loadData();

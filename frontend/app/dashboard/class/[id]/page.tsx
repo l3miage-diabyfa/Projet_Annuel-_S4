@@ -122,7 +122,7 @@ export default function SingleClassPage() {
               </div>
               {/* Add button */}
               <Link
-                href={`/dashboard/class/${classId}/add-subject`}
+                href={`/dashboard/subjects/new?classId=${classId}`}
                 className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 font-medium px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors w-full sm:w-auto whitespace-nowrap"
               >
                 Ajouter une matière <FiPlus className="w-5 h-5" />
@@ -139,7 +139,7 @@ export default function SingleClassPage() {
                 {searchQuery ? 'Aucune matière trouvée' : 'Aucune matière pour le moment'}
               </p>
               <Link
-                href={`/dashboard/class/${classId}/add-subject`}
+                href={`/dashboard/subjects/new?classId=${classId}`}
                 className="inline-block bg-primary-yellow hover:bg-yellow-400 text-gray-900 px-6 py-3 rounded-xl transition"
               >
                 Ajouter votre première matière

@@ -47,7 +47,7 @@ export class ClassesService {
   });
 
   if (!teacher) {
-    throw new NotFoundException(`Teacher with ID ${createClassDto.teacherId} not found`);
+    throw new NotFoundException(`Professeur avec l'ID ${createClassDto.teacherId} pas trouvé`);
   }
 
   // Allow TEACHER and ADMIN (for testing)
@@ -64,53 +64,71 @@ export class ClassesService {
   });
 
   if (existingClass) {
-    throw new ConflictException(`Class "${createClassDto.name}" already exists for this teacher`);
+    throw new ConflictException(
+      `Class "${createClassDto.name}" already exists for this teacher`
+    );
   }
 
-  // ✅ NEW: Process student emails if provided
+  // Parse student emails
   let studentEmails: string[] = [];
   if (createClassDto.studentEmails) {
     studentEmails = createClassDto.studentEmails
       .split(';')
       .map(email => email.trim())
-      .filter(email => email.length > 0);
+      .filter(email => email.length > 0 && email.includes('@'));
   }
 
-  // Create the class
+  // Create the class (without studentEmails in data)
+  const { studentEmails: _, ...classData } = createClassDto;
   const classItem = await this.prisma.class.create({
-    data: createClassDto,
+    data: classData,
     include: this.includeRelations,
   });
 
-  // ✅ NEW: Create student users and enrollments
+  // Create student users and enrollments
   if (studentEmails.length > 0) {
     for (const email of studentEmails) {
-      // Check if student already exists
-      let student = await this.prisma.user.findUnique({
-        where: { email },
-      });
+      try {
+        // Check if user already exists
+        let student = await this.prisma.user.findUnique({
+          where: { email },
+        });
 
-      // If student doesn't exist, create invitation
-      if (!student) {
-        student = await this.prisma.user.create({
-          data: {
-            email,
-            lastname: '',
-            firstname: '',
-            password: '', // They'll set it later via invitation
-            role: 'STUDENT',
-            establishmentId: teacher.establishmentId,
+        // If student doesn't exist, create invitation placeholder
+        if (!student) {
+          student = await this.prisma.user.create({
+            data: {
+              email,
+              lastname: '',
+              firstname: '',
+              password: '', // They'll set password via invitation link
+              role: 'STUDENT',
+              establishmentId: teacher.establishmentId,
+            },
+          });
+        }
+
+        // Check if enrollment already exists
+        const existingEnrollment = await this.prisma.enrollment.findFirst({
+          where: {
+            classId: classItem.id,
+            studentId: student.id,
           },
         });
-      }
 
-      // Create enrollment
-      await this.prisma.enrollment.create({
-        data: {
-          classId: classItem.id,
-          studentId: student.id,
-        },
-      });
+        // Create enrollment if it doesn't exist
+        if (!existingEnrollment) {
+          await this.prisma.enrollment.create({
+            data: {
+              classId: classItem.id,
+              studentId: student.id,
+            },
+          });
+        }
+      } catch (err) {
+        // Log error but continue with other students
+        console.error(`Failed to enroll ${email}:`, err);
+      }
     }
   }
 
@@ -118,8 +136,8 @@ export class ClassesService {
   return this.prisma.class.findUnique({
     where: { id: classItem.id },
     include: this.includeRelations,
-  });
-}
+    });
+  }
 
   /**
    * READ - Get all classes

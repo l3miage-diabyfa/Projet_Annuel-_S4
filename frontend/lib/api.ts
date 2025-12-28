@@ -130,6 +130,7 @@ export async function createClass(data: {
   academicYear: string;
   gradeLevel: string;
   teacherId: string;
+  studentEmails?: string;
 }): Promise<Class> {
   const response = await fetch(`${API_URL}/classes`, {
     method: 'POST',
