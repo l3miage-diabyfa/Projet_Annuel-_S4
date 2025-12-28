@@ -5,6 +5,7 @@ import { RegisterAdminDto } from './dto/register-admin.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { CompleteInvitationDto } from './dto/complete-invitation.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { AdminRoleGuard } from './admin-role.guard';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
@@ -18,7 +19,7 @@ export class UserController {
     return this.userService.registerAdmin(registerAdminDto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
   @ApiBearerAuth('JWT-auth')
   @Post('invite')
   async inviteUser(@Body() inviteUserDto: InviteUserDto, @Request() req) {
@@ -37,14 +38,17 @@ export class UserController {
     return this.userService.completeInvitation(invitationToken, email, firstname, lastname, password);
   }
 
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('by-establishment/:establishmentId')
   async getUsersByEstablishment(@Param('establishmentId') establishmentId: string) {
     return this.userService.getUsersByEstablishment(establishmentId);
   }
 
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('all')
   async getAllUsers() {
-    //sécuriser la route
     return this.userService.getAllUsers();
   }
 
@@ -84,7 +88,7 @@ export class UserController {
     return this.userService.resetPassword(body.token, body.newPassword);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
   @ApiBearerAuth('JWT-auth')
   @Delete('account')
   async deleteAccount(@Request() req) {
