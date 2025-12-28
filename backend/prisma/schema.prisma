@@ -143,3 +143,20 @@ model Lesson {
   // Relations
   @@index([classId])
 }
+
+// Contact model - represents contact form submissions
+model Contact {
+  id           String   @id @default(uuid())
+  organization String
+  lastName     String
+  firstName    String
+  email        String
+  phone        String?
+  classCount   Int
+  message      String?
+  wantsCallback Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+}
