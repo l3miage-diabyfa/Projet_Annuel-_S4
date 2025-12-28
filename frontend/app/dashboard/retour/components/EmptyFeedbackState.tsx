@@ -25,7 +25,7 @@ export default function EmptyFeedbackState() {
             Je crée une matière <FiArrowUpRight className="w-5 h-5" />
           </Link>
           <Link
-            href="/dashboard/classes"
+            href="/dashboard/class"
             className="button-outline whitespace-nowrap w-fit!"
           >
             Je crée une classe <FiArrowUpRight className="w-5 h-5" />

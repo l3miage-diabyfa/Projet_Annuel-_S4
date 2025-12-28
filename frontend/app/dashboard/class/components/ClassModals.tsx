@@ -46,8 +46,6 @@ interface AddClassModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: ClassFormData) => void;
-  isLimitReached?: boolean; // If true, shows limit modal instead? Or handled by parent?
-  // Actually, standard add modal
 }
 
 export function AddClassModal({
@@ -65,6 +63,13 @@ export function AddClassModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
+    // Reset form after successful submission
+    setFormData({
+      name: "",
+      students: "",
+      emails: "",
+      description: "",
+    });
   };
 
   return (
@@ -93,7 +98,8 @@ export function AddClassModal({
             Nombre d'étudiants
           </label>
           <input
-            type="text"
+            type="number"
+            min="1"
             placeholder="Entrez le nombre d'étudiants"
             className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-primary-yellow focus:ring-1 focus:ring-primary-yellow outline-none transition-all placeholder:text-gray-300"
             value={formData.students}
@@ -134,7 +140,7 @@ export function AddClassModal({
         </div>
 
         <button
-          type="button"
+          type="submit"
           className="w-full sm:w-auto bg-primary-yellow hover:bg-yellow-400 text-gray-900 font-medium px-8 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors mt-8"
         >
           Créer la classe <FiArrowUpRight className="w-5 h-5" />
@@ -159,7 +165,6 @@ export function EditClassModal({
 }: EditClassModalProps) {
   const [formData, setFormData] = React.useState<ClassFormData>(initialData);
 
-  // Update effect if initialData changes while open
   React.useEffect(() => {
     if (isOpen) {
       setFormData(initialData);
@@ -196,7 +201,8 @@ export function EditClassModal({
             Nombre d'étudiants
           </label>
           <input
-            type="text"
+            type="number"
+            min="1"
             className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-primary-yellow focus:ring-1 focus:ring-primary-yellow outline-none transition-all"
             value={formData.students}
             onChange={(e) =>
@@ -286,7 +292,7 @@ export function ArchiveClassModal({
 interface LimitReachedModalProps {
   isOpen: boolean;
   onClose: () => void;
-  isAdmin?: boolean; // Controls which version to show
+  isAdmin?: boolean;
 }
 
 export function LimitReachedModal({
@@ -315,7 +321,6 @@ export function LimitReachedModal({
           <div className="flex flex-row items-center gap-4">
             <button
               onClick={() => {
-                // Handle plan upgrade redirect
                 console.log("Redirect to upgrade");
               }}
               className="bg-primary-yellow hover:bg-yellow-400 text-gray-900 font-medium px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"

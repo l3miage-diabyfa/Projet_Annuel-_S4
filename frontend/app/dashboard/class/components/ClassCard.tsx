@@ -3,7 +3,7 @@ import Link from "next/link";
 import { FiArrowUpRight, FiEye } from "react-icons/fi";
 
 interface ClassItem {
-  id: number;
+  id: number | string; // Accept both
   name: string;
   description: string;
   students: number;
@@ -11,16 +11,15 @@ interface ClassItem {
 
 interface ClassCardProps {
   cls: ClassItem;
+  onArchive: (id: number | string) => void;
+  onEdit: (cls: ClassItem) => void;
 }
 
 export default function ClassCard({
   cls,
   onArchive,
   onEdit,
-}: ClassCardProps & {
-  onArchive: (id: number) => void;
-  onEdit: (cls: ClassItem) => void;
-}) {
+}: ClassCardProps) {
   return (
     <Link
       href={`/dashboard/class/${cls.id}`}
@@ -35,7 +34,7 @@ export default function ClassCard({
             {cls.description}
           </p>
           <p className="text-xs font-bold text-gray-900 mt-1">
-            {cls.students} étudiants
+            {cls.students} étudiant{cls.students !== 1 ? 's' : ''}
           </p>
         </div>
         <span
@@ -53,7 +52,7 @@ export default function ClassCard({
         <div className="flex items-center gap-3">
           <button
             className="text-xs text-gray-500 hover:text-gray-700 underline decoration-gray-300"
-            tabIndex={-1} // Prevent link navigation
+            tabIndex={-1}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -64,7 +63,7 @@ export default function ClassCard({
           </button>
           <button
             className="text-xs text-gray-500 hover:text-gray-700 underline decoration-gray-300"
-            tabIndex={-1} // Prevent link navigation
+            tabIndex={-1}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();

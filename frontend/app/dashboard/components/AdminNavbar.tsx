@@ -26,7 +26,7 @@ export default function AdminNavbar() {
         <div className="flex flex-col items-center p-2 bg-gray-50 border border-gray-200 rounded-lg">
           <div className="flex gap-2">
             <Link
-              href="/dashboard/classes"
+              href="/dashboard/class"
               className="flex-1 py-3 px-5 whitespace-nowrap rounded-sm font-medium text-center transition-colors bg-gray-900 text-white"
               aria-current={false}
             >

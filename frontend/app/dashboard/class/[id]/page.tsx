@@ -1,97 +1,91 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FiSearch, FiPlus } from "react-icons/fi";
 import { useParams } from "next/navigation";
 import BackButton from "../../components/backButton";
 import TrialBanner from "../../components/TrialBanner";
-import SubjectRow, { Subject } from "./components/SubjectRow";
+import SubjectRow from "./components/SubjectRow";
+import { getClass, getSubjectsByClass, type Class, type Subject } from "@/lib/api";
+import { getTokenCookie } from "@/utils/cookie";
 
 export default function SingleClassPage() {
+  const router = useRouter();
   const params = useParams();
   const classId = params.id as string;
+  
   const [searchQuery, setSearchQuery] = useState("");
+  const [classData, setClassData] = useState<Class | null>(null);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const classData = {
-    id: classId,
-    name: "B3UI",
-    students: 24,
-  };
+  useEffect(() => {
+    const token = getTokenCookie();
+    if (!token) {
+      router.push('/login');
+      return;
+    }
 
-  const subjects: Subject[] = [
-    {
-      id: 1,
-      name: "UI design",
-      teacher: "Kathleen Alcini",
-      dateRange: "21/01/2024 - 21/01/2024",
-      status: "pending",
-      formType: null,
-      feedbackCount: 0,
-      totalStudents: 24,
-    },
-    {
-      id: 2,
-      name: "UI design",
-      teacher: "Kathleen Alcini",
-      dateRange: "21/01/2024 - 21/01/2024",
-      status: "active",
-      formType: "all_moments",
-      totalStudents: 24,
-      moments: [
-        {
-          type: "during",
-          label: "Pendant le cours",
-          link: "https://izzi.app/eval/123",
-          feedbackCount: 33,
-          totalStudents: 24,
-        },
-        {
-          type: "end",
-          label: "Fin du cours (automatique)",
-          link: "https://izzi.app/eval/124",
-          feedbackCount: 12,
-          totalStudents: 24,
-        },
-      ],
-    },
-    {
-      id: 3,
-      name: "UI design",
-      teacher: "Kathleen Alcini",
-      dateRange: "21/01/2024 - 21/01/2024",
-      status: "active_resent",
-      formType: "all_moments",
-      totalStudents: 24,
-      moments: [
-        {
-          type: "during",
-          label: "Pendant le cours",
-          link: "https://izzi.app/eval/125",
-          feedbackCount: 33,
-          totalStudents: 24,
-        },
-        {
-          type: "end",
-          label: "Fin du cours (automatique)",
-          link: "https://izzi.app/eval/126",
-          feedbackCount: 12,
-          totalStudents: 24,
-        },
-      ],
-    },
-  ];
+    loadData();
+  }, [classId, router]);
 
-  // Filtrage optimisé avec useMemo
+  async function loadData() {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [classResponse, subjectsResponse] = await Promise.all([
+        getClass(classId),
+        getSubjectsByClass(classId),
+      ]);
+      
+      setClassData(classResponse);
+      setSubjects(subjectsResponse);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur de chargement');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const filteredSubjects = useMemo(() => {
     if (!searchQuery.trim()) return subjects;
     const query = searchQuery.toLowerCase();
     return subjects.filter(
       (subject) =>
         subject.name.toLowerCase().includes(query) ||
-        subject.teacher.toLowerCase().includes(query)
+        (subject.instructorName && subject.instructorName.toLowerCase().includes(query))
     );
-  }, [searchQuery]);
+  }, [searchQuery, subjects]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-12">
+        <div className="mx-auto px-4 sm:px-6 py-8">
+          <p className="text-center text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !classData) {
+    return (
+      <div className="min-h-screen pb-12">
+        <div className="mx-auto px-4 sm:px-6 py-8">
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl">
+            <p className="font-semibold">Erreur</p>
+            <p>{error || 'Classe introuvable'}</p>
+            <button onClick={loadData} className="mt-2 text-sm underline">
+              Réessayer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-12">
@@ -110,7 +104,7 @@ export default function SingleClassPage() {
                 {classData.name}
               </h1>
               <p className="text-gray-500 font-medium whitespace-nowrap">
-                {classData.students} étudiants
+                {classData.enrollments.length} étudiant{classData.enrollments.length !== 1 ? 's' : ''}
               </p>
             </div>
 
@@ -126,9 +120,9 @@ export default function SingleClassPage() {
                 />
                 <FiSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               </div>
-              {/* edd button */}
+              {/* Add button */}
               <Link
-                href="/dashboard/add-subjects"
+                href={`/dashboard/class/${classId}/add-subject`}
                 className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 font-medium px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors w-full sm:w-auto whitespace-nowrap"
               >
                 Ajouter une matière <FiPlus className="w-5 h-5" />
@@ -137,10 +131,22 @@ export default function SingleClassPage() {
           </div>
         </div>
 
-        {/* Subjects List avec scroll horizontal */}
+        {/* Subjects List */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <div className="">
+          {filteredSubjects.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-gray-500 text-lg mb-4">
+                {searchQuery ? 'Aucune matière trouvée' : 'Aucune matière pour le moment'}
+              </p>
+              <Link
+                href={`/dashboard/class/${classId}/add-subject`}
+                className="inline-block bg-primary-yellow hover:bg-yellow-400 text-gray-900 px-6 py-3 rounded-xl transition"
+              >
+                Ajouter votre première matière
+              </Link>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
               {/* List Header */}
               <div className="grid grid-cols-24 gap-4 px-6 py-4 border-b border-gray-200 bg-gray-50/50 text-xs font-bold text-gray-900 uppercase tracking-wider">
                 <div className="col-span-6">Les matières</div>
@@ -154,11 +160,25 @@ export default function SingleClassPage() {
 
               <div className="divide-y divide-gray-100">
                 {filteredSubjects.map((subject) => (
-                  <SubjectRow key={subject.id} subject={subject} />
+                  <SubjectRow 
+                    key={subject.id} 
+                    subject={{
+                      id: parseInt(subject.id) || 0,
+                      name: subject.name,
+                      teacher: subject.instructorName || 'Non spécifié',
+                      dateRange: subject.firstLessonDate && subject.lastLessonDate
+                        ? `${new Date(subject.firstLessonDate).toLocaleDateString('fr-FR')} - ${new Date(subject.lastLessonDate).toLocaleDateString('fr-FR')}`
+                        : 'Dates non définies',
+                      status: 'pending' as const,
+                      formType: null,
+                      feedbackCount: 0,
+                      totalStudents: classData.enrollments.length,
+                    }} 
+                  />
                 ))}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -40,48 +40,86 @@ export class ClassesService {
     },
   };
 
-  /**
-   * CREATE - Create a new class
-   */
   async create(createClassDto: CreateClassDto) {
-    // Validate teacher exists
-    const teacher = await this.prisma.user.findUnique({
-      where: { id: createClassDto.teacherId },
-    });
+  // Validate teacher exists
+  const teacher = await this.prisma.user.findUnique({
+    where: { id: createClassDto.teacherId },
+  });
 
-    if (!teacher) {
-      throw new NotFoundException(
-        `Professeur avec l'ID ${createClassDto.teacherId} pas trouvé`
-      );
-    }
-
-    // Check if user has permission to create a class
-    const allowedRoles = ['TEACHER', 'ADMIN'];
-    if (!allowedRoles.includes(teacher.role)) {
-      throw new BadRequestException(
-        'Vous n\'êtes pas autorisé à créer une classe'
-      );
-    }
-
-    // Check for duplicate class name by same teacher
-    const existingClass = await this.prisma.class.findFirst({
-      where: {
-        name: createClassDto.name,
-        teacherId: createClassDto.teacherId,
-      },
-    });
-
-    if (existingClass) {
-      throw new ConflictException(
-        `Classe "${createClassDto.name}" existe déjà pour ce professeur`
-      );
-    }
-
-    return this.prisma.class.create({
-      data: createClassDto,
-      include: this.includeRelations,
-    });
+  if (!teacher) {
+    throw new NotFoundException(`Teacher with ID ${createClassDto.teacherId} not found`);
   }
+
+  // Allow TEACHER and ADMIN (for testing)
+  if (teacher.role !== 'TEACHER' && teacher.role !== 'ADMIN') {
+    throw new BadRequestException('Seuls les responsables pédagogiques peuvent créer des classes');
+  }
+
+  // Check for duplicate class name by same teacher
+  const existingClass = await this.prisma.class.findFirst({
+    where: {
+      name: createClassDto.name,
+      teacherId: createClassDto.teacherId,
+    },
+  });
+
+  if (existingClass) {
+    throw new ConflictException(`Class "${createClassDto.name}" already exists for this teacher`);
+  }
+
+  // ✅ NEW: Process student emails if provided
+  let studentEmails: string[] = [];
+  if (createClassDto.studentEmails) {
+    studentEmails = createClassDto.studentEmails
+      .split(';')
+      .map(email => email.trim())
+      .filter(email => email.length > 0);
+  }
+
+  // Create the class
+  const classItem = await this.prisma.class.create({
+    data: createClassDto,
+    include: this.includeRelations,
+  });
+
+  // ✅ NEW: Create student users and enrollments
+  if (studentEmails.length > 0) {
+    for (const email of studentEmails) {
+      // Check if student already exists
+      let student = await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+      // If student doesn't exist, create invitation
+      if (!student) {
+        student = await this.prisma.user.create({
+          data: {
+            email,
+            lastname: '',
+            firstname: '',
+            password: '', // They'll set it later via invitation
+            role: 'STUDENT',
+            establishmentId: teacher.establishmentId,
+          },
+        });
+      }
+
+      // Create enrollment
+      await this.prisma.enrollment.create({
+        data: {
+          classId: classItem.id,
+          studentId: student.id,
+        },
+      });
+    }
+  }
+
+  // Return class with updated enrollments
+  return this.prisma.class.findUnique({
+    where: { id: classItem.id },
+    include: this.includeRelations,
+  });
+}
 
   /**
    * READ - Get all classes
