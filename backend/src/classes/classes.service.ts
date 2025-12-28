@@ -40,46 +40,102 @@ export class ClassesService {
     },
   };
 
-  /**
-   * CREATE - Create a new class
-   */
   async create(createClassDto: CreateClassDto) {
-    // Validate teacher exists
-    const teacher = await this.prisma.user.findUnique({
-      where: { id: createClassDto.teacherId },
-    });
+  // Validate teacher exists
+  const teacher = await this.prisma.user.findUnique({
+    where: { id: createClassDto.teacherId },
+  });
 
-    if (!teacher) {
-      throw new NotFoundException(
-        `Professeur avec l'ID ${createClassDto.teacherId} pas trouvé`
-      );
+  if (!teacher) {
+    throw new NotFoundException(`Professeur avec l'ID ${createClassDto.teacherId} pas trouvé`);
+  }
+
+  // Allow TEACHER and ADMIN (for testing)
+  if (teacher.role !== 'TEACHER' && teacher.role !== 'ADMIN') {
+    throw new BadRequestException('Seuls les responsables pédagogiques peuvent créer des classes');
+  }
+
+  // Check for duplicate class name by same teacher
+  const existingClass = await this.prisma.class.findFirst({
+    where: {
+      name: createClassDto.name,
+      teacherId: createClassDto.teacherId,
+    },
+  });
+
+  if (existingClass) {
+    throw new ConflictException(
+      `Class "${createClassDto.name}" already exists for this teacher`
+    );
+  }
+
+  // Parse student emails
+  let studentEmails: string[] = [];
+  if (createClassDto.studentEmails) {
+    studentEmails = createClassDto.studentEmails
+      .split(';')
+      .map(email => email.trim())
+      .filter(email => email.length > 0 && email.includes('@'));
+  }
+
+  // Create the class (without studentEmails in data)
+  const { studentEmails: _, ...classData } = createClassDto;
+  const classItem = await this.prisma.class.create({
+    data: classData,
+    include: this.includeRelations,
+  });
+
+  // Create student users and enrollments
+  if (studentEmails.length > 0) {
+    for (const email of studentEmails) {
+      try {
+        // Check if user already exists
+        let student = await this.prisma.user.findUnique({
+          where: { email },
+        });
+
+        // If student doesn't exist, create invitation placeholder
+        if (!student) {
+          student = await this.prisma.user.create({
+            data: {
+              email,
+              lastname: '',
+              firstname: '',
+              password: '', // They'll set password via invitation link
+              role: 'STUDENT',
+              establishmentId: teacher.establishmentId,
+            },
+          });
+        }
+
+        // Check if enrollment already exists
+        const existingEnrollment = await this.prisma.enrollment.findFirst({
+          where: {
+            classId: classItem.id,
+            studentId: student.id,
+          },
+        });
+
+        // Create enrollment if it doesn't exist
+        if (!existingEnrollment) {
+          await this.prisma.enrollment.create({
+            data: {
+              classId: classItem.id,
+              studentId: student.id,
+            },
+          });
+        }
+      } catch (err) {
+        // Log error but continue with other students
+        console.error(`Failed to enroll ${email}:`, err);
+      }
     }
+  }
 
-    // Check if user has permission to create a class
-    const allowedRoles = ['TEACHER', 'ADMIN'];
-    if (!allowedRoles.includes(teacher.role)) {
-      throw new BadRequestException(
-        'Vous n\'êtes pas autorisé à créer une classe'
-      );
-    }
-
-    // Check for duplicate class name by same teacher
-    const existingClass = await this.prisma.class.findFirst({
-      where: {
-        name: createClassDto.name,
-        teacherId: createClassDto.teacherId,
-      },
-    });
-
-    if (existingClass) {
-      throw new ConflictException(
-        `Classe "${createClassDto.name}" existe déjà pour ce professeur`
-      );
-    }
-
-    return this.prisma.class.create({
-      data: createClassDto,
-      include: this.includeRelations,
+  // Return class with updated enrollments
+  return this.prisma.class.findUnique({
+    where: { id: classItem.id },
+    include: this.includeRelations,
     });
   }
 

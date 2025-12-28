@@ -23,4 +23,8 @@ export class CreateClassDto {
   @IsUUID('4', { message: 'L\'ID du professeur doit être un UUID valide' })
   @IsNotEmpty()
   teacherId: string;
+
+  @IsOptional()
+  @IsString()
+  studentEmails?: string;
 }
