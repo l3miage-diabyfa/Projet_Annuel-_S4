@@ -43,7 +43,6 @@ export class SubjectsService {
     const isTeacherOfClass = classItem.teacherId === userId;
     const isAuthorized = 
       isTeacherOfClass || 
-      user.role === 'REFERENT' || 
       user.role === 'ADMIN';
 
     if (!isAuthorized) {
@@ -123,7 +122,6 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
   const isTeacherOfClass = classItem.teacherId === userId;
   const isAuthorized = 
     isTeacherOfClass || 
-    user.role === 'REFERENT' || 
     user.role === 'ADMIN';
 
   if (!isAuthorized) {
@@ -353,7 +351,6 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
     const isTeacherOfClass = subject.class.teacherId === userId;
     const isAuthorized = 
       isTeacherOfClass || 
-      user.role === 'REFERENT' || 
       user.role === 'ADMIN';
 
     if (!isAuthorized) {
@@ -416,7 +413,6 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
     const isTeacherOfClass = subject.class.teacherId === userId;
     const isAuthorized = 
       isTeacherOfClass || 
-      user.role === 'REFERENT' || 
       user.role === 'ADMIN';
 
     if (!isAuthorized) {

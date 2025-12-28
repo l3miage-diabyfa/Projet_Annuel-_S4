@@ -8,6 +8,7 @@ import { EstablishmentModule } from './establishment/establishment.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { EmailModule } from './common/email/email.module';
 import { ContactModule } from './contact/contact.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ContactModule } from './contact/contact.module';
     SubjectsModule,
     EmailModule,
     ContactModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,7 +7,6 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
-import { Class, Prisma } from '@prisma/client';
 
 @Injectable()
 export class ClassesService {
@@ -39,7 +38,7 @@ export class ClassesService {
         },
       },
     },
-  } satisfies Prisma.ClassInclude;
+  };
 
   /**
    * CREATE - Create a new class
@@ -52,15 +51,15 @@ export class ClassesService {
 
     if (!teacher) {
       throw new NotFoundException(
-        `Teacher with ID ${createClassDto.teacherId} not found`
+        `Professeur avec l'ID ${createClassDto.teacherId} pas trouvé`
       );
     }
 
     // Check if user has permission to create a class
-    const allowedRoles = ['TEACHER', 'ADMIN', 'REFERENT'];
+    const allowedRoles = ['TEACHER', 'ADMIN'];
     if (!allowedRoles.includes(teacher.role)) {
       throw new BadRequestException(
-        'User must have TEACHER, ADMIN, or REFERENT role to create a class'
+        'Vous n\'êtes pas autorisé à créer une classe'
       );
     }
 
@@ -74,7 +73,7 @@ export class ClassesService {
 
     if (existingClass) {
       throw new ConflictException(
-        `Class "${createClassDto.name}" already exists for this teacher`
+        `Classe "${createClassDto.name}" existe déjà pour ce professeur`
       );
     }
 
@@ -87,8 +86,16 @@ export class ClassesService {
   /**
    * READ - Get all classes
    */
-  async findAll(teacherId?: string) {
-    const where = teacherId ? { teacherId } : {};
+  async findAll(teacherId?: string, isActive?: boolean) {
+    const where: any = {};
+  
+    if (teacherId) {
+      where.teacherId = teacherId;
+    }
+  
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
 
     return this.prisma.class.findMany({
       where,
@@ -273,4 +280,40 @@ export class ClassesService {
       })),
     };
   }
+
+  /**
+   * ARCHIVE - Archive a class
+   */
+  async archive(id: string) {
+    // Check if class exists
+    await this.findOne(id);
+
+    const archivedClass = await this.prisma.class.update({
+      where: { id },
+      data: { isActive: false },
+      include: this.includeRelations,
+    });
+
+    // TODO: Send email notification
+    // await this.mailerService.sendClassArchivedEmail(
+    //   archivedClass.teacher.email,
+    //   archivedClass.name
+    // );
+
+    return archivedClass;
+  }
+
+  /**
+   * UNARCHIVE - Reactivate a class
+   */
+  async unarchive(id: string) {
+    await this.findOne(id);
+
+    return this.prisma.class.update({
+      where: { id },
+      data: { isActive: true },
+      include: this.includeRelations,
+    });
+  }
+
 }
