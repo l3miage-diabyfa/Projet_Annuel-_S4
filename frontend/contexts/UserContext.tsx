@@ -8,6 +8,8 @@ interface UserInfo {
   email: string;
   role: string;
   establishment?: string;
+  provider?: string;
+  profilePic?: string;
 }
 
 interface UserContextType {

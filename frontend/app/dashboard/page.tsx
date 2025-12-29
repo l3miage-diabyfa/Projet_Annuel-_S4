@@ -19,11 +19,11 @@ interface Invoice {
 }
 
 export default function DashboardPage() {
-  // Simuler si l'utilisateur s'est inscrit manuellement (true) ou via OAuth (false)
-  const [isManualSignup] = useState(true);
-  
   const router = useRouter();
   const { user, setUser, logout: logoutUser } = useUser();
+  
+  // Verify if the user signed up manually or via a provider
+  const isManualSignup = !user?.provider || user.provider === 'local';
   
   useEffect(() => {
     const token = getTokenCookie();
@@ -427,14 +427,22 @@ export default function DashboardPage() {
                     onChange={handleUserInfoChange}
                   />
 
-                  <InputField
-                    label="Email"
-                    name="email"
-                    type="email"
-                    placeholder="Entrez votre email"
-                    value={formData.email}
-                    onChange={handleUserInfoChange}
-                  />
+                  <div>
+                    <InputField
+                      label="Email"
+                      name="email"
+                      type="email"
+                      placeholder="Entrez votre email"
+                      value={formData.email}
+                      onChange={handleUserInfoChange}
+                      disabled={!isManualSignup}
+                    />
+                    {!isManualSignup && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Email géré par Google
+                      </p>
+                    )}
+                  </div>
 
                   {userInfo.role === "ADMIN" && (
                     <InputField
@@ -509,8 +517,7 @@ export default function DashboardPage() {
                   <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                     <h3 className="text-lg font-bold mb-4">Modifier mon mot de passe</h3>
                     <p className="text-gray-600 text-sm">
-                      Vous vous êtes connecté via un fournisseur tiers (Google, Facebook, etc.).
-                      La modification du mot de passe doit être effectuée directement auprès de votre fournisseur d'identité.
+                      La modification du mot de passe n'est pas disponible pour les comptes Google.
                     </p>
                   </div>
                 )}
