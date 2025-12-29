@@ -28,6 +28,8 @@ services:
       dockerfile: Dockerfile
     container_name: school-backend
     restart: always
+    env_file:
+      - backend/.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-school_admin}:${POSTGRES_PASSWORD:-school_password}@postgres:5432/${POSTGRES_DB:-school_db}?schema=public
       NODE_ENV: development

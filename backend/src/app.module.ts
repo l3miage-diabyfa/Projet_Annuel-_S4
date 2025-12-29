@@ -9,6 +9,7 @@ import { SubjectsModule } from './subjects/subjects.module';
 import { EmailModule } from './common/email/email.module';
 import { ContactModule } from './contact/contact.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { AIModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     EmailModule,
     ContactModule,
     ReviewsModule,
+    AIModule,
   ],
   controllers: [AppController],
   providers: [AppService],
