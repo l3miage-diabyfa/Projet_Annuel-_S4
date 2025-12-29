@@ -9,6 +9,8 @@ import { AdminRoleGuard } from './admin-role.guard';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
+import { GoogleCompleteInvitationDto } from './dto/google-complete-invitation.dto';
 
 @Controller('user')
 export class UserController {
@@ -55,6 +57,16 @@ export class UserController {
   @Post('login')
   async login(@Body() loginUserDto: LoginUserDto) {
     return this.userService.login(loginUserDto);
+  }
+
+  @Post('google-login')
+  async googleLogin(@Body() googleLoginDto: GoogleLoginDto) {
+    return this.userService.googleLogin(googleLoginDto.token);
+  }
+
+  @Post('google-complete-invitation')
+  async googleCompleteInvitation(@Body() googleInvitationDto: GoogleCompleteInvitationDto) {
+    return this.userService.googleCompleteInvitation(googleInvitationDto.token, googleInvitationDto.invitationToken);
   }
 
   @UseGuards(JwtAuthGuard)

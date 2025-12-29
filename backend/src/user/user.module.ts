@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { AdminRoleGuard } from './admin-role.guard';
 import { EmailModule } from '../common/email/email.module';
+import { GoogleAuthService } from './google-auth.service';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { EmailModule } from '../common/email/email.module';
     EmailModule,
   ],
   controllers: [UserController],
-  providers: [UserService, PrismaService, AuthService, JwtStrategy, AdminRoleGuard],
+  providers: [UserService, PrismaService, AuthService, JwtStrategy, AdminRoleGuard, GoogleAuthService],
   exports: [JwtStrategy, AdminRoleGuard],
 })
 export class UserModule { }
