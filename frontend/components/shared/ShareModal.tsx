@@ -2,24 +2,15 @@
 
 import React, { useState } from "react";
 import { IoClose, IoCopy, IoArrowForward, IoTrashOutline } from "react-icons/io5";
-
-interface Collaborator {
-  id: string;
-  name: string;
-  email: string;
-  role: "admin" | "editor";
-  initials: string;
-  color: string;
-  isPending?: boolean;
-}
+import type { EstablishmentUser, Role } from "@/types/user";
 
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
   shareLink?: string;
-  collaborators?: Collaborator[];
-  onInvite?: (email: string, role: "admin" | "editor") => void;
-  onChangeRole?: (collaboratorId: string, newRole: "admin" | "editor") => void;
+  collaborators?: EstablishmentUser[];
+  onInvite?: (email: string, role: Role) => void;
+  onChangeRole?: (collaboratorId: string, newRole: Role) => void;
   onRemoveAccess?: (collaboratorId: string) => void;
 }
 
@@ -33,7 +24,7 @@ export default function ShareModal({
   onRemoveAccess,
 }: ShareModalProps) {
   const [email, setEmail] = useState("");
-  const [selectedRole, setSelectedRole] = useState<"admin" | "editor">("editor");
+  const [selectedRole, setSelectedRole] = useState<Role>("REFERENT");
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
@@ -52,15 +43,15 @@ export default function ShareModal({
     if (email && onInvite) {
       onInvite(email, selectedRole);
       setEmail("");
-      setSelectedRole("editor");
+      setSelectedRole("REFERENT");
     }
   };
 
   const handleRoleChange = (collaboratorId: string, newRole: string) => {
     if (newRole === "remove" && onRemoveAccess) {
       onRemoveAccess(collaboratorId);
-    } else if ((newRole === "admin" || newRole === "editor") && onChangeRole) {
-      onChangeRole(collaboratorId, newRole);
+    } else if ((newRole === "ADMIN" || newRole === "REFERENT") && onChangeRole) {
+      onChangeRole(collaboratorId, newRole as Role);
     }
   };
 
@@ -106,13 +97,13 @@ export default function ShareModal({
               />
               <select
                 value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value as "admin" | "editor")}
+                onChange={(e) => setSelectedRole(e.target.value as Role)}
                 className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none bg-white min-w-[140px]"
                 aria-label="Sélectionner un rôle"
               >
                 <option value="">Rôle</option>
-                <option value="editor">Éditeur</option>
-                <option value="admin">Admin</option>
+                <option value="REFERENT">Editeur</option>
+                <option value="ADMIN">Admin</option>
               </select>
             </div>
 
@@ -141,19 +132,18 @@ export default function ShareModal({
                     className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 py-2 sm:py-3"
                   >
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                      <div
-                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg flex-shrink-0 ${
+                      <img
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${collaborator.email}`}
+                        alt={`${collaborator.firstname} ${collaborator.lastname}`}
+                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0 ${
                           collaborator.isPending ? "opacity-40" : ""
                         }`}
-                        style={{ backgroundColor: collaborator.color }}
-                      >
-                        {collaborator.initials}
-                      </div>
+                      />
                       <div className="min-w-0 flex-1">
                         <div className={`font-semibold text-sm sm:text-base truncate ${
                           collaborator.isPending ? "text-gray-400" : "text-gray-900"
                         }`}>
-                          {collaborator.name}
+                          {collaborator.firstname} {collaborator.lastname}
                         </div>
                         <div className="text-xs sm:text-sm text-gray-500 truncate">
                           {collaborator.email}
@@ -165,10 +155,10 @@ export default function ShareModal({
                       value={collaborator.role}
                       onChange={(e) => handleRoleChange(collaborator.id, e.target.value)}
                       className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none bg-white w-full sm:w-auto sm:min-w-[160px] text-sm sm:text-base"
-                      aria-label={`Modifier le rôle de ${collaborator.name}`}
+                      aria-label={`Modifier le rôle de ${collaborator.firstname} ${collaborator.lastname}`}
                     >
-                      <option value="admin">Admin</option>
-                      <option value="editor">Éditeur</option>
+                      <option value="ADMIN">Admin</option>
+                      <option value="REFERENT">Editeur</option>
                       <option value="remove" className="text-red-600">
                         Supprimer l&apos;accès
                       </option>

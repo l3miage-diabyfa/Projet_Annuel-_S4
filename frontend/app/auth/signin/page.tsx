@@ -57,7 +57,7 @@ export default function LoginPage() {
       if (data.user) {
         setUser(data.user);
       }
-      router.push("/dashboard");
+      router.push("/dashboard/class");
     } else {
       setError(error || data?.message || "Erreur lors de la connexion");
     }
@@ -94,7 +94,7 @@ export default function LoginPage() {
       if (data.user) {
         setUser(data.user);
       }
-      router.push("/dashboard");
+      router.push("/dashboard/class");
     } else {
       setGoogleError(true);
     }

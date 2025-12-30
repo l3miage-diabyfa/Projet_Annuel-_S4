@@ -21,6 +21,8 @@ enum Role {
 model Establishment {
   id    String @id @default(uuid())
   name  String @unique
+  shareToken       String?   @unique
+  shareTokenExpiry DateTime?
   users User[]
   // Ajoute ici les relations vers classes, teachers, etc. si besoin
 }

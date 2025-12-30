@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { RegisterAdminDto } from './dto/register-admin.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,7 +10,7 @@ import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UnauthorizedException } from '@nestjs/common';
-import { User, Establishment } from '@prisma/client';
+import { Establishment, Role } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -256,9 +256,98 @@ export class UserService {
     };
   }
 
-  async getUsersByEstablishment(establishmentId: string) {
-    //protéger cette route dans le controller, seulement les admins et référents peuvent y accéder
-    return this.prisma.user.findMany({ where: { establishmentId } });
+  async getUsersByEstablishment(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.establishmentId) {
+      throw new UnauthorizedException('Utilisateur ou établissement introuvable');
+    }
+    
+    return this.prisma.user.findMany({ 
+      where: { 
+        establishmentId: user.establishmentId,
+        id: { not: userId }, // Exclude the requesting user
+      },
+      select: {
+        id: true,
+        email: true,
+        firstname: true,
+        lastname: true,
+        profilePic: true,
+        role: true,
+      },
+    });
+  }
+
+  async updateUserRole(adminId: string, targetUserId: string, newRole: Role) {
+    const admin = await this.prisma.user.findUnique({ where: { id: adminId } });
+    if (!admin || admin.role !== 'ADMIN') {
+      throw new UnauthorizedException('Seuls les administrateurs peuvent modifier les rôles');
+    }
+
+    const targetUser = await this.prisma.user.findUnique({ where: { id: targetUserId } });
+    if (!targetUser) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    if (targetUser.establishmentId !== admin.establishmentId) {
+      throw new UnauthorizedException('Vous ne pouvez modifier que les utilisateurs de votre établissement');
+    }
+
+    if (adminId === targetUserId) {
+      throw new ConflictException('Vous ne pouvez pas modifier votre propre rôle');
+    }
+
+    // Mettre à jour le rôle
+    const updatedUser = await this.prisma.user.update({
+      where: { id: targetUserId },
+      data: { role: newRole },
+      select: {
+        id: true,
+        email: true,
+        firstname: true,
+        lastname: true,
+        profilePic: true,
+        role: true,
+      },
+    });
+
+    return {
+      message: 'Rôle mis à jour avec succès',
+      user: updatedUser,
+    };
+  }
+
+  async generateShareableInvitationLink(adminId: string) {
+    const admin = await this.prisma.user.findUnique({ 
+      where: { id: adminId },
+      include: { establishment: true },
+    });
+    
+    if (!admin || admin.role !== 'ADMIN') {
+      throw new UnauthorizedException('Seuls les administrateurs peuvent générer des liens d\'invitation');
+    }
+
+    if (!admin.establishmentId) {
+      throw new ConflictException('Établissement introuvable');
+    }
+
+    const shareToken = uuidv4();
+    const shareExpiry = new Date();
+    shareExpiry.setDate(shareExpiry.getDate() + 30); // 30 days validity
+
+    // Update the establishment with the shareable token
+    await this.prisma.establishment.update({
+      where: { id: admin.establishmentId },
+      data: {
+        shareToken,
+        shareTokenExpiry: shareExpiry,
+      },
+    });
+
+    return {
+      shareToken,
+      expiresAt: shareExpiry,
+    };
   }
 
   async getAllUsers() {
@@ -653,6 +742,45 @@ export class UserService {
         profilePic: updatedUser.profilePic,
         provider: updatedUser.provider || 'google',
       },
+    };
+  }
+
+  async removeUserAccess(adminId: string, targetUserId: string) {
+    const admin = await this.prisma.user.findUnique({ 
+      where: { id: adminId },
+      include: { establishment: true }
+    });
+
+    if (!admin) {
+      throw new UnauthorizedException('Administrateur introuvable');
+    }
+
+    if (admin.role !== 'ADMIN') {
+      throw new UnauthorizedException('Seul un administrateur peut supprimer des utilisateurs');
+    }
+
+    const targetUser = await this.prisma.user.findUnique({ 
+      where: { id: targetUserId }
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    if (targetUser.establishmentId !== admin.establishmentId) {
+      throw new UnauthorizedException('Vous ne pouvez supprimer que les utilisateurs de votre établissement');
+    }
+
+    if (targetUser.id === admin.id) {
+      throw new ConflictException('Vous ne pouvez pas supprimer votre propre compte de cette manière');
+    }
+
+    await this.prisma.user.delete({
+      where: { id: targetUserId }
+    });
+
+    return {
+      message: 'Utilisateur supprimé avec succès',
     };
   }
 }
