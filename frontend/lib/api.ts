@@ -244,19 +244,3 @@ export async function deleteSubject(id: string): Promise<void> {
     throw new Error(error.message);
   }
 }
-
-export async function register(data: {
-  schoolName: string;
-  email: string;
-  lastname: string;
-  firstname: string;
-  password: string;
-}): Promise<{ access_token: string; user: any }> {
-  const response = await fetch(`${API_URL}/user/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  
-  return handleResponse(response);
-}

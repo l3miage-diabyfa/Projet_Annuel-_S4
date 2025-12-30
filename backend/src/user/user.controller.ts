@@ -11,6 +11,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
 import { GoogleCompleteInvitationDto } from './dto/google-complete-invitation.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 
 @Controller('user')
 export class UserController {
@@ -42,9 +43,10 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard, AdminRoleGuard)
   @ApiBearerAuth('JWT-auth')
-  @Get('by-establishment/:establishmentId')
-  async getUsersByEstablishment(@Param('establishmentId') establishmentId: string) {
-    return this.userService.getUsersByEstablishment(establishmentId);
+  @Get('by-establishment')
+  async getUsersByEstablishment(@Request() req) {
+    const userId = req.user.userId;
+    return this.userService.getUsersByEstablishment(userId);
   }
 
   @UseGuards(JwtAuthGuard, AdminRoleGuard)
@@ -106,5 +108,36 @@ export class UserController {
   async deleteAccount(@Request() req) {
     const userId = req.user.userId;
     return this.userService.deleteAccount(userId);
+  }
+
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('update-role/:userId')
+  async updateUserRole(
+    @Param('userId') targetUserId: string,
+    @Body() updateUserRoleDto: UpdateUserRoleDto,
+    @Request() req
+  ) {
+    const adminId = req.user.userId;
+    return this.userService.updateUserRole(adminId, targetUserId, updateUserRoleDto.role);
+  }
+
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post('generate-share-link')
+  async generateShareableInvitationLink(@Request() req) {
+    const adminId = req.user.userId;
+    return this.userService.generateShareableInvitationLink(adminId);
+  }
+
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Delete('remove-access/:userId')
+  async removeUserAccess(
+    @Request() req,
+    @Param('userId') targetUserId: string,
+  ) {
+    const adminId = req.user.userId;
+    return this.userService.removeUserAccess(adminId, targetUserId);
   }
 }

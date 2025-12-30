@@ -105,7 +105,7 @@ export default function SignupPage() {
       if (data.user) {
         setUser(data.user);
       }
-      router.push("/dashboard");
+      router.push("/dashboard/class");
     } else {
       setError(error || data?.message || "Erreur lors de l'inscription");
     }
@@ -149,7 +149,7 @@ export default function SignupPage() {
       if (data.user) {
         setUser(data.user);
       }
-      router.push("/dashboard");
+      router.push("/dashboard/class");
     } else {
       setGoogleError(true);
     }
