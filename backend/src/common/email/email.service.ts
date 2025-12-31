@@ -68,4 +68,76 @@ export class EmailService {
       from: 'IZZZI <tizisalim5@gmail.com>',
     });
   }
+
+  async sendReviewInvitation(
+    studentEmail: string,
+    studentFirstName: string,
+    data: {
+      subjectName: string;
+      className: string;
+      instructorName: string;
+      formType: 'Pendant le cours' | 'Fin du cours';
+      publicLink: string;
+      deadline?: string;
+    }
+  ): Promise<boolean> {
+    const feedbackUrl = `${process.env.FRONTEND_URL}/review/${data.publicLink}`;
+
+    return await this.senderService.sendEmail({
+      to: studentEmail,
+      subject: `📝 Votre avis sur "${data.subjectName}" - ${data.formType}`,
+      template: 'review-invitation',
+      context: {
+        studentFirstName,
+        subjectName: data.subjectName,
+        className: data.className,
+        instructorName: data.instructorName,
+        formType: data.formType,
+        feedbackUrl,
+        hasDeadline: !!data.deadline,
+        deadline: data.deadline,
+        frontendUrl: process.env.FRONTEND_URL,
+      },
+      from: 'IZZZI <tizisalim5@gmail.com>',
+    });
+  }
+
+  async sendBulkReviewInvitations(
+    students: Array<{
+      email: string;
+      firstname: string;
+    }>,
+    data: {
+      subjectName: string;
+      className: string;
+      instructorName: string;
+      formType: 'Pendant le cours' | 'Fin du cours';
+      publicLink: string;
+      deadline?: string;
+    }
+  ): Promise<{ sent: number; failed: number }> {
+    let sent = 0;
+    let failed = 0;
+
+    for (const student of students) {
+      try {
+        const success = await this.sendReviewInvitation(
+          student.email,
+          student.firstname,
+          data
+        );
+
+        if (success) {
+          sent++;
+        } else {
+          failed++;
+        }
+      } catch (error) {
+        console.error(`Failed to send email to ${student.email}:`, error);
+        failed++;
+      }
+    }
+
+    return { sent, failed };
+  }
 }

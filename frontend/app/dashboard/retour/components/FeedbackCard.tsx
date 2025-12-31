@@ -9,7 +9,7 @@ import {
 } from "react-icons/fi";
 
 export interface Feedback {
-  id: number;
+  id: number | string;
   subject: string;
   classCode: string;
   teacher: string;
@@ -24,6 +24,7 @@ export interface Feedback {
   };
   summary: string;
   endDate: string;
+  formId?: string;
 }
 
 interface FeedbackCardProps {

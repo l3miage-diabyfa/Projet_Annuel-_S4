@@ -125,10 +125,16 @@ model Subject {
   classId           String
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  reviewForms       ReviewForm[]
+
+  // Link to review Forms
+  duringFormId      String?
+  afterFormId       String?
 
   // Relations
-  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  class             Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
+  reviewForms       ReviewForm[]
+  duringForm        ReviewForm? @relation("SubjectDuringForm", fields: [duringFormId], references: [id], onDelete: SetNull)
+  afterForm         ReviewForm? @relation("SubjectAfterForm", fields: [afterFormId], references: [id], onDelete: SetNull)
 
   @@index([classId])
 }
@@ -173,17 +179,22 @@ model ReviewForm {
   id          String   @id @default(uuid())
   title       String   // e.g., "Évaluation durant le cours"
   type        ReviewFormType // DURING_CLASS or AFTER_CLASS
-  classId     String
+  classId     String?
   subjectId   String?  // Optional: specific to a subject
   isActive    Boolean  @default(true)
+  publicLink  String?   @default(uuid())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  class       Class?    @relation(fields: [classId], references: [id], onDelete: Cascade)
   subject     Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   fields      ReviewFormField[]
   reviews     Review[]
+
+  // Subjects that use this form
+  subjectsUsingDuring Subject[] @relation("SubjectDuringForm")
+  subjectsUsingAfter  Subject[] @relation("SubjectAfterForm")
 
   @@index([classId])
   @@index([subjectId])
@@ -226,7 +237,7 @@ model Review {
   formId      String
   studentId   String?  // Optional: anonymous reviews allowed
   sessionId   String?  // Track anonymous users
-  publicLink  String   @unique // UUID for public access
+  publicLink  String   @unique @default(uuid()) // UUID for public access
   submittedAt DateTime @default(now())
   ipAddress   String?  // For spam prevention
 

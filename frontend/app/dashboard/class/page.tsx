@@ -107,12 +107,18 @@ setClasses(classesData);
   };
 
   const handleEditClick = (cls: Class) => {
+    // Extract emails from enrollments
+    const studentEmails = cls.enrollments
+      .map(enrollment => enrollment.student?.email)
+      .filter(email => email) // Remove undefined
+      .join('; ');
+
     setEditingClass({
       id: cls.id,
       name: cls.name,
       description: cls.description || '',
       students: cls.enrollments.length.toString(),
-      emails: '', // Not stored in backend
+      emails: studentEmails, // Contains actual emails!
     });
     setIsEditModalOpen(true);
   };
@@ -122,6 +128,7 @@ setClasses(classesData);
       await updateClass(editingClass.id, {
         name: data.name,
         description: data.description || undefined,
+        studentEmails: data.emails || undefined,
       });
       
       await loadData();

@@ -10,6 +10,7 @@ import {
   HttpStatus,
   ParseUUIDPipe,
   Ip,
+  Query,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewFormDto } from './dto/create-review-form.dto';
@@ -22,7 +23,7 @@ export class ReviewsController {
 
   /**
    * POST /reviews/forms
-   * Create a review form (TEACHER only)
+   * Create a review form (TEACHER/ADMIN only)
    */
   @UseGuards(JwtAuthGuard)
   @Post('forms')
@@ -33,15 +34,12 @@ export class ReviewsController {
 
   /**
    * GET /reviews/forms/class/:classId
-   * Get all forms for a class (TEACHER only)
+   * Get all forms for a class (for modal selection)
    */
   @UseGuards(JwtAuthGuard)
   @Get('forms/class/:classId')
-  getFormsByClass(
-    @Param('classId', ParseUUIDPipe) classId: string,
-    @Request() req,
-  ) {
-    return this.reviewsService.getFormsByClass(classId, req.user.userId);
+  getFormsForClass(@Param('classId', ParseUUIDPipe) classId: string) {
+    return this.reviewsService.getFormsForClass(classId);
   }
 
   /**
@@ -65,7 +63,7 @@ export class ReviewsController {
 
   /**
    * GET /reviews/forms/:formId/responses
-   * Get all responses for a form (TEACHER only)
+   * Get all responses for a form (TEACHER/ADMIN only)
    */
   @UseGuards(JwtAuthGuard)
   @Get('forms/:formId/responses')
@@ -74,5 +72,56 @@ export class ReviewsController {
     @Request() req,
   ) {
     return this.reviewsService.getReviewsForForm(formId, req.user.userId);
+  }
+
+  /**
+   * GET /reviews/forms/:formId/has-responses
+   * Check if form has responses
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('forms/:formId/has-responses')
+  hasResponses(@Param('formId') formId: string) {
+    return this.reviewsService.hasResponses(formId);
+  }
+
+  /**
+   * GET /reviews/forms/:formId/responses-stats
+   * Get responses with statistics
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('forms/:formId/responses-stats')
+  getResponsesWithStats(
+    @Param('formId') formId: string,
+    @Request() req,
+  ) {
+    return this.reviewsService.getFormResponsesWithStats(formId, req.user.userId);
+  }
+
+  /**
+   * POST /reviews/forms/:formId/send-reminder
+   * Send reminder emails
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('forms/:formId/send-reminder')
+  sendReminder(
+    @Param('formId') formId: string,
+    @Body() body: { classId: string },
+    @Request() req,
+  ) {
+    return this.reviewsService.sendReminderEmails(formId, body.classId, req.user.userId);
+  }
+
+  /**
+   * GET /reviews/forms/:formId/export
+   * Export responses (CSV/Excel)
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('forms/:formId/export')
+  exportResponses(
+    @Param('formId') formId: string,
+    @Query('format') format: 'csv' | 'excel',
+    @Request() req,
+  ) {
+    return this.reviewsService.exportResponses(formId, format, req.user.userId);
   }
 }

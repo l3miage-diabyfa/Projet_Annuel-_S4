@@ -3,15 +3,20 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Query,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReviewFormDto } from './dto/create-review-form.dto';
 import { SubmitReviewDto } from './dto/submit-review.dto';
+import { EmailService } from '../common/email/email.service';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
 
   /**
    * CREATE - Create a review form (TEACHER only)
@@ -300,10 +305,9 @@ export class ReviewsService {
     }
 
     // Only check ownership if user is TEACHER (not ADMIN)
-    if (user.role === 'TEACHER' && form.class.teacherId !== userId) {
-      throw new ForbiddenException('Accès refusé');
-    }
-    // ADMIN can see responses for any form
+    if (user.role === 'TEACHER' && form.class && form.class.teacherId !== userId) {
+    throw new ForbiddenException('Accès refusé');
+  }
 
     return this.prisma.review.findMany({
       where: { formId },
@@ -323,5 +327,263 @@ export class ReviewsService {
       },
       orderBy: { submittedAt: 'desc' },
     });
+  }
+
+  /**
+   * GET - Get all forms for a class (includes global templates)
+   */
+  async getFormsForClass(classId: string) {
+    return this.prisma.reviewForm.findMany({
+      where: {
+        OR: [
+          { classId: classId }, // Formulaires spécifiques à cette classe
+          { classId: null },    // Formulaires template globaux
+        ],
+        isActive: true,
+      },
+      include: {
+        fields: {
+          orderBy: { order: 'asc' },
+        },
+        _count: {
+          select: {
+            reviews: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
+   * GET - Get single form by ID
+   */
+  async getForm(formId: string) {
+    const form = await this.prisma.reviewForm.findUnique({
+      where: { id: formId },
+      include: {
+        fields: {
+          orderBy: { order: 'asc' },
+        },
+        class: true,
+        subject: true,
+      },
+    });
+
+    if (!form) {
+      throw new NotFoundException('Form not found');
+    }
+
+    return form;
+  }
+
+  /**
+ * Check if form has any responses
+ */
+async hasResponses(formId: string): Promise<{ hasResponses: boolean; count: number }> {
+  const count = await this.prisma.review.count({
+    where: { formId },
+  });
+
+  return {
+    hasResponses: count > 0,
+    count,
+  };
+}
+
+  /**
+   * Get all responses for a form with statistics
+   */
+  async getFormResponsesWithStats(formId: string, userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const form = await this.prisma.reviewForm.findUnique({
+      where: { id: formId },
+      include: {
+        class: true,
+      },
+    });
+
+    if (!form) {
+      throw new NotFoundException('Form not found');
+    }
+
+    // Allow ADMIN or TEACHER of the class
+    const isTeacherOfClass = form.class && form.class.teacherId === userId;
+    const isAdmin = user.role === 'ADMIN';
+
+    if (!isTeacherOfClass && !isAdmin) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    // Get all responses
+    const responses = await this.prisma.review.findMany({
+      where: { formId },
+      include: {
+        responses: {
+          include: {
+            field: true,
+          },
+        },
+        student: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        submittedAt: 'desc',
+      },
+    });
+
+    // Calculate statistics
+    const totalResponses = responses.length;
+    const fields = await this.prisma.reviewFormField.findMany({
+      where: { formId },
+      orderBy: { order: 'asc' },
+    });
+
+    const fieldStats = fields.map(field => {
+      const fieldResponses = responses.flatMap(r => 
+        r.responses.filter(resp => resp.fieldId === field.id)
+      );
+
+      let stats: any = {
+        fieldId: field.id,
+        label: field.label,
+        type: field.type,
+        responseCount: fieldResponses.length,
+      };
+
+      if (field.type === 'STARS') {
+        const values = fieldResponses.map(r => r.value as number);
+        const average = values.reduce((a, b) => a + b, 0) / values.length;
+        stats.average = Math.round(average * 10) / 10;
+      }
+
+      return stats;
+    });
+
+    return {
+      form: {
+        id: form.id,
+        title: form.title,
+        type: form.type,
+      },
+      totalResponses,
+      responses,
+      fieldStats,
+    };
+  }
+
+  /**
+   * Send reminder emails to students
+   */
+  async sendReminderEmails(formId: string, classId: string, userId: string) {
+    // Get user to check role
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Verify access
+    const classData = await this.prisma.class.findUnique({
+      where: { id: classId },
+      include: {
+        enrollments: {
+          include: {
+            student: true,
+          },
+        },
+      },
+    });
+
+    if (!classData) {
+      throw new NotFoundException('Class not found');
+    }
+
+    // Allow ADMIN or TEACHER of the class
+    const isTeacherOfClass = classData.teacherId === userId;
+    const isAdmin = user.role === 'ADMIN';
+
+    if (!isTeacherOfClass && !isAdmin) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const form = await this.prisma.reviewForm.findUnique({
+      where: { id: formId },
+      include: {
+        reviews: true,
+        subject: true,
+      },
+    });
+
+    if (!form) {
+      throw new NotFoundException('Form not found');
+    }
+
+    // Get students who haven't responded yet
+    const studentsToRemind = classData.enrollments.filter(enrollment => 
+      !form.reviews.some(review => review.studentId === enrollment.studentId)
+    );
+
+    if (studentsToRemind.length === 0) {
+      return {
+        sent: 0,
+        failed: 0,
+        message: 'Tous les étudiants ont déjà répondu',
+      };
+    }
+
+    // Send emails using EmailService
+    const students = studentsToRemind.map(enrollment => ({
+      email: enrollment.student.email,
+      firstname: enrollment.student.firstname || 'Étudiant',
+    }));
+
+    const result = await this.emailService.sendBulkReviewInvitations(
+      students,
+      {
+        subjectName: form.subject?.name || 'ce cours',
+        className: classData.name,
+        instructorName: form.subject?.instructorName || 'votre enseignant',
+        formType: form.type === 'DURING_CLASS' ? 'Pendant le cours' : 'Fin du cours',
+        publicLink: form.publicLink || form.id,
+        deadline: form.subject?.lastLessonDate 
+          ? new Date(form.subject.lastLessonDate).toLocaleDateString('fr-FR')
+          : undefined,
+      }
+    );
+
+    console.log(`✅ Sent ${result.sent} emails, ${result.failed} failed`);
+
+    return result;
+  }
+
+  /**
+   * Export responses as CSV or Excel
+   */
+  async exportResponses(formId: string, format: 'csv' | 'excel', userId: string) {
+    const data = await this.getFormResponsesWithStats(formId, userId);
+    
+    // TODO: Implement CSV/Excel generation
+    // For now, return data structure
+    return {
+      format,
+      data,
+      filename: `responses_${formId}_${new Date().toISOString()}.${format}`,
+    };
   }
 }
