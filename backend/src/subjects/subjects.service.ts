@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { ImportSubjectsCsvDto, SubjectCsvRowDto } from './dto/import-subjects-csv.dto';
+import { AttachFormsDto } from './dto/attach-forms.dto';
 
 @Injectable()
 export class SubjectsService {
@@ -230,7 +231,6 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
    * READ - Get all subjects for a class
    */
   async findByClass(classId: string, userId: string) {
-    // Verify class exists and user has access
     const classItem = await this.prisma.class.findUnique({
       where: { id: classId },
       include: { teacher: true },
@@ -265,6 +265,7 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
       );
     }
 
+    // inclusion des formulaires avec stats
     return this.prisma.subject.findMany({
       where: { classId },
       orderBy: { createdAt: 'desc' },
@@ -273,6 +274,25 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
           select: {
             id: true,
             name: true,
+          },
+        },
+        // Include review forms with response counts
+        duringForm: {
+          include: {
+            _count: {
+              select: {
+                reviews: true,
+              },
+            },
+          },
+        },
+        afterForm: {
+          include: {
+            _count: {
+              select: {
+                reviews: true,
+              },
+            },
           },
         },
       },
@@ -451,5 +471,130 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
     ];
 
     return `${headers.join(',')}\n${exampleRow.join(',')}`;
+  }
+
+  /**
+   * Attach review forms to a subject
+   */
+  async attachReviewForms(
+    subjectId: string,
+    dto: AttachFormsDto,
+    userId: string,
+  ) {
+    // Get subject with class
+    const subject = await this.prisma.subject.findUnique({
+      where: { id: subjectId },
+      include: {
+        class: true,
+      },
+    });
+
+    if (!subject) {
+      throw new NotFoundException('Subject not found');
+    }
+
+    // Get user to check role
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Allow ADMIN or TEACHER of the class
+    const isTeacherOfClass = subject.class.teacherId === userId;
+    const isAdmin = user.role === 'ADMIN';
+
+    if (!isTeacherOfClass && !isAdmin) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    // Validate forms exist and belong to same class
+    if (dto.duringFormId) {
+      const duringForm = await this.prisma.reviewForm.findUnique({
+        where: { id: dto.duringFormId },
+      });
+
+      // Allow global forms (classId = null) OR forms from same class
+      if (!duringForm) {
+        throw new BadRequestException('During form not found');
+      }
+
+      if (duringForm.classId !== null && duringForm.classId !== subject.classId) {
+        throw new BadRequestException('Invalid during form - must be global or from same class');
+      }
+    }
+
+    if (dto.afterFormId) {
+      const afterForm = await this.prisma.reviewForm.findUnique({
+        where: { id: dto.afterFormId },
+      });
+
+      // Allow global forms (classId = null) OR forms from same class
+      if (!afterForm) {
+        throw new BadRequestException('After form not found');
+      }
+
+      if (afterForm.classId !== null && afterForm.classId !== subject.classId) {
+        throw new BadRequestException('Invalid after form - must be global or from same class');
+      }
+    }
+
+    // Update subject
+    return this.prisma.subject.update({
+      where: { id: subjectId },
+      data: {
+        duringFormId: dto.duringFormId,
+        afterFormId: dto.afterFormId,
+      },
+      include: {
+        duringForm: true,
+        afterForm: true,
+      },
+    });
+  }
+
+  /**
+   * Get subject with forms and response counts
+   */
+  async getSubjectWithFormStats(subjectId: string, userId: string) {
+    const subject = await this.prisma.subject.findUnique({
+      where: { id: subjectId },
+      include: {
+        class: true,
+        duringForm: {
+          include: {
+            reviews: true,
+          },
+        },
+        afterForm: {
+          include: {
+            reviews: true,
+          },
+        },
+      },
+    });
+
+    if (!subject) {
+      throw new NotFoundException('Subject not found');
+    }
+
+    // Verify access
+    if (subject.class.teacherId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return {
+      ...subject,
+      duringFormStats: subject.duringForm ? {
+        totalResponses: subject.duringForm.reviews.length,
+        publicLink: `${process.env.FRONTEND_URL}/review/${subject.duringForm.publicLink}`,
+      } : null,
+      afterFormStats: subject.afterForm ? {
+        totalResponses: subject.afterForm.reviews.length,
+        publicLink: `${process.env.FRONTEND_URL}/review/${subject.afterForm.publicLink}`,
+      } : null,
+    };
   }
 }

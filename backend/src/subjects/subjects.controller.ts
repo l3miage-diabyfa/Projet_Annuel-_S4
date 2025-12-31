@@ -18,6 +18,7 @@ import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { ImportSubjectsCsvDto } from './dto/import-subjects-csv.dto';
 import { JwtAuthGuard } from '../user/jwt-auth.guard';
+import { AttachFormsDto } from './dto/attach-forms.dto';
 
 @Controller('subjects')
 @UseGuards(JwtAuthGuard) // All routes require authentication
@@ -97,5 +98,25 @@ export class SubjectsController {
   @HttpCode(HttpStatus.OK)
   remove(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     return this.subjectsService.remove(id, req.user.userId);
+  }
+  // Attach review forms to subject
+  @Patch(':id/attach-forms')
+  @UseGuards(JwtAuthGuard)
+  async attachReviewForms(
+    @Param('id') id: string,
+    @Body() dto: AttachFormsDto,
+    @Request() req,
+  ) {
+    return this.subjectsService.attachReviewForms(id, dto, req.user.userId);
+  }
+
+  // Get subject with form statistics
+  @Get(':id/with-stats')
+  @UseGuards(JwtAuthGuard)
+  async getSubjectWithStats(
+    @Param('id') id: string,
+    @Request() req,
+  ) {
+    return this.subjectsService.getSubjectWithFormStats(id, req.user.userId);
   }
 }

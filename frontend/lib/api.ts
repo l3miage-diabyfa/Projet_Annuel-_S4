@@ -146,6 +146,7 @@ export async function updateClass(
   data: {
     name?: string;
     description?: string;
+    studentEmails?: string;
   }
 ): Promise<Class> {
   const response = await fetch(`${API_URL}/classes/${id}`, {
@@ -259,4 +260,130 @@ export async function register(data: {
   });
   
   return handleResponse(response);
+}
+
+// ===== REVIEWS/RETOURS API =====
+
+export interface ReviewFormField {
+  id: string;
+  label: string;
+  type: 'STARS' | 'RADIO' | 'CHECKBOX' | 'TEXTAREA';
+  required: boolean;
+  options?: string[];
+  order: number;
+}
+
+export interface ReviewForm {
+  id: string;
+  title: string;
+  type: 'DURING_CLASS' | 'AFTER_CLASS';
+  classId: string;
+  subjectId?: string;
+  publicLink: string;
+  isActive: boolean;
+  fields: ReviewFormField[];
+  createdAt: string;
+}
+
+export interface ReviewResponse {
+  id: string;
+  formId: string;
+  studentId?: string;
+  submittedAt: string;
+  responses: {
+    fieldId: string;
+    value: any;
+  }[];
+}
+
+export interface ReviewStats {
+  totalResponses: number;
+  fieldStats: {
+    fieldId: string;
+    label: string;
+    type: string;
+    responseCount: number;
+    average?: number;
+  }[];
+}
+
+// Get forms for a class
+export async function getReviewFormsForClass(classId: string): Promise<ReviewForm[]> {
+  const response = await fetch(`${API_URL}/reviews/forms/class/${classId}`, {
+    headers: getAuthHeaders(),
+    cache: 'no-store',
+  });
+  
+  return handleResponse<ReviewForm[]>(response);
+}
+
+// Attach forms to subject
+export async function attachFormsToSubject(
+  subjectId: string,
+  data: {
+    duringFormId?: string;
+    afterFormId?: string;
+  }
+): Promise<Subject> {
+  const response = await fetch(`${API_URL}/subjects/${subjectId}/attach-forms`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  
+  return handleResponse<Subject>(response);
+}
+
+// Get subject with form statistics
+export async function getSubjectWithStats(subjectId: string): Promise<any> {
+  const response = await fetch(`${API_URL}/subjects/${subjectId}/with-stats`, {
+    headers: getAuthHeaders(),
+    cache: 'no-store',
+  });
+  
+  return handleResponse(response);
+}
+
+// Check if form has responses
+export async function checkFormHasResponses(formId: string): Promise<{ hasResponses: boolean; count: number }> {
+  const response = await fetch(`${API_URL}/reviews/forms/${formId}/has-responses`, {
+    headers: getAuthHeaders(),
+    cache: 'no-store',
+  });
+  
+  return handleResponse(response);
+}
+
+// Get form responses with stats
+export async function getFormResponsesWithStats(formId: string): Promise<any> {
+  const response = await fetch(`${API_URL}/reviews/forms/${formId}/responses-stats`, {
+    headers: getAuthHeaders(),
+    cache: 'no-store',
+  });
+  
+  return handleResponse(response);
+}
+
+// Send reminder emails
+export async function sendReminderEmails(formId: string, classId: string): Promise<{ sent: number; failed: number }> {
+  const response = await fetch(`${API_URL}/reviews/forms/${formId}/send-reminder`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ classId }),
+  });
+  
+  return handleResponse(response);
+}
+
+// Export responses
+export async function exportResponses(formId: string, format: 'csv' | 'excel'): Promise<Blob> {
+  const response = await fetch(`${API_URL}/reviews/forms/${formId}/export?format=${format}`, {
+    headers: getAuthHeaders(),
+  });
+  
+  if (!response.ok) {
+    throw new Error('Export failed');
+  }
+  
+  return response.blob();
 }

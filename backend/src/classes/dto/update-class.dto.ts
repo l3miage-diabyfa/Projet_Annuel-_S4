@@ -11,4 +11,8 @@ export class UpdateClassDto {
   @IsString()
   @MaxLength(500)
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  studentEmails?: string;
 }

@@ -1,103 +1,156 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { FiSearch, FiChevronDown } from "react-icons/fi";
 import TrialBanner from "../components/TrialBanner";
 import EmptyFeedbackState from "./components/EmptyFeedbackState";
 import FeedbackCard, { Feedback } from "./components/FeedbackCard";
+import { getClasses, getSubjectsByClass, getUserFromToken, type Class, type Subject } from "@/lib/api";
+import { getTokenCookie } from "@/utils/cookie";
 
 export default function DashboardPage() {
-  // Toggle this to see Empty State vs Content State
-  // Pour tester l'état vide, passer cette liste à []
-  const [feedbacks, setFeedbacks] = useState<Feedback[]>([
-    {
-      id: 1,
-      subject: "UI design",
-      classCode: "A3UI",
-      teacher: "Zoé Doe",
-      type: "end_of_course",
-      returnCount: 17,
-      score: 7.8,
-      alertCount: 3,
-      latestAlert: {
-        type: "red",
-        count: "1/3",
-        text: "Ricotta Chicago Aussie extra pie. Ranch parmesan anchovies sautéed lovers red Chicago stuffed.",
-      },
-      summary:
-        "Deep ipsum steak thin personal party. Personal mouth large broccoli bbq crust Hawaiian pesto mushrooms. Lasagna.",
-      endDate: "26 sept. 2025",
-    },
-    {
-      id: 2,
-      subject: "UI design",
-      classCode: "A3UI",
-      teacher: "Zoé Doe",
-      type: "end_of_course",
-      returnCount: 17,
-      score: 7.8,
-      alertCount: 3,
-      latestAlert: {
-        type: "red",
-        count: "1/3",
-        text: "Ricotta Chicago Aussie extra pie. Ranch parmesan anchovies sautéed lovers red Chicago stuffed.",
-      },
-      summary:
-        "Deep ipsum steak thin personal party. Personal mouth large broccoli bbq crust Hawaiian pesto mushrooms. Lasagna.",
-      endDate: "26 sept. 2025",
-    },
-    {
-      id: 3,
-      subject: "UI design",
-      classCode: "A3UI",
-      teacher: "Zoé Doe",
-      type: "during_course",
-      returnCount: 17,
-      score: 7.8,
-      alertCount: 3,
-      latestAlert: {
-        type: "green",
-        count: "1/2",
-        text: "Ricotta Chicago Aussie extra pie. Ranch parmesan anchovies sautéed lovers red Chicago stuffed.",
-      },
-      summary:
-        "Deep ipsum steak thin personal party. Personal mouth large broccoli bbq crust Hawaiian pesto mushrooms. Lasagna.",
-      endDate: "26 sept. 2025",
-    },
-    {
-      id: 4,
-      subject: "UI design",
-      classCode: "A3UI",
-      teacher: "Zoé Doe",
-      type: "during_course",
-      returnCount: 17,
-      score: 7.8,
-      alertCount: 3,
-      latestAlert: {
-        type: "red", // Assuming Alert logic
-        count: "",
-        text: "Deep ipsum steak thin personal party. Personal mouth large broccoli bbq crust Hawaiian pesto mushrooms. Lasagna.",
-      }, // Using summary as placeholder if no alert text
-      summary:
-        "Deep ipsum steak thin personal party. Personal mouth large broccoli bbq crust Hawaiian pesto mushrooms. Lasagna.",
-      endDate: "25 sept. 2025",
-    },
-  ]);
+  const router = useRouter();
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<"current" | "finished">("current");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAlertsOnly, setShowAlertsOnly] = useState(false);
 
-  // -- Empty State Component --
+  useEffect(() => {
+    const token = getTokenCookie();
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    loadFeedbacks();
+  }, [router]);
+
+  async function loadFeedbacks() {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const userInfo = getUserFromToken();
+      if (!userInfo) {
+        router.push('/login');
+        return;
+      }
+
+      // Get all teacher's classes
+      const classes = await getClasses({ 
+        teacherId: userInfo.userId,
+        isActive: true 
+      });
+
+      // Get subjects with forms for each class
+      const allFeedbacks: Feedback[] = [];
+
+      for (const classItem of classes) {
+        const subjects = await getSubjectsByClass(classItem.id);
+
+        for (const subject of subjects) {
+          // Check if subject has forms
+          const typedSubject = subject as Subject & {
+            duringForm?: any;
+            afterForm?: any;
+          };
+
+          // Add "during" form feedback
+          if (typedSubject.duringForm) {
+            allFeedbacks.push({
+              id: `during-${typedSubject.duringForm.id}`,
+              subject: subject.name,
+              classCode: classItem.name,
+              teacher: subject.instructorName || 'Non spécifié',
+              type: "during_course",
+              returnCount: typedSubject.duringForm._count?.reviews || 0,
+              score: 0, // TODO: Calculate from responses
+              alertCount: 0, // TODO: Calculate from responses
+              summary: "Chargement de la synthèse...", // TODO: Generate from AI
+              endDate: subject.lastLessonDate 
+                ? new Date(subject.lastLessonDate).toLocaleDateString('fr-FR')
+                : 'Non défini',
+              formId: typedSubject.duringForm.id,
+            });
+          }
+
+          // Add "after" form feedback
+          if (typedSubject.afterForm) {
+            allFeedbacks.push({
+              id: `after-${typedSubject.afterForm.id}`,
+              subject: subject.name,
+              classCode: classItem.name,
+              teacher: subject.instructorName || 'Non spécifié',
+              type: "end_of_course",
+              returnCount: typedSubject.afterForm._count?.reviews || 0,
+              score: 0, // TODO: Calculate
+              alertCount: 0, // TODO: Calculate
+              summary: "Chargement de la synthèse...",
+              endDate: subject.lastLessonDate 
+                ? new Date(subject.lastLessonDate).toLocaleDateString('fr-FR')
+                : 'Non défini',
+              formId: typedSubject.afterForm.id,
+            });
+          }
+        }
+      }
+
+      setFeedbacks(allFeedbacks);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur de chargement');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const filteredFeedbacks = feedbacks.filter((feedback) => {
+    const matchesSearch = 
+      feedback.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      feedback.classCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      feedback.teacher.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesAlerts = !showAlertsOnly || feedback.alertCount > 0;
+
+    return matchesSearch && matchesAlerts;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-12">
+        <div className="max-w-[1600px] mx-auto px-6 py-8">
+          <p className="text-center text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen pb-12">
+        <div className="max-w-[1600px] mx-auto px-6 py-8">
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl">
+            <p className="font-semibold">Erreur</p>
+            <p>{error}</p>
+            <button onClick={loadFeedbacks} className="mt-2 text-sm underline">
+              Réessayer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (feedbacks.length === 0) {
     return <EmptyFeedbackState />;
   }
 
-  // -- Content State Component --
   return (
     <div className="min-h-screen pb-12">
       <div className="max-w-[1600px] mx-auto px-6 py-8 space-y-8">
-        {/* Banner */}
         <TrialBanner />
 
         {/* Tabs & Title */}
@@ -127,7 +180,6 @@ export default function DashboardPage() {
 
           {/* Filters */}
           <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
-            {/* Search */}
             <div className="relative w-full lg:w-96">
               <input
                 type="text"
@@ -139,7 +191,6 @@ export default function DashboardPage() {
               <FiSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             </div>
 
-            {/* Right Filters */}
             <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
               <div className="relative">
                 <select className="appearance-none bg-white border border-gray-200 px-4 py-3 pr-10 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer">
@@ -182,11 +233,17 @@ export default function DashboardPage() {
         </div>
 
         {/* Feedbacks Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {feedbacks.map((feedback) => (
-            <FeedbackCard key={feedback.id} feedback={feedback} />
-          ))}
-        </div>
+        {filteredFeedbacks.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl">
+            <p className="text-gray-500">Aucun retour trouvé</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredFeedbacks.map((feedback) => (
+              <FeedbackCard key={feedback.id} feedback={feedback} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

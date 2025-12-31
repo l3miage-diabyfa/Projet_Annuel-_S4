@@ -201,18 +201,21 @@ export class ClassesService {
    */
   async update(id: string, updateClassDto: UpdateClassDto) {
     // Check if class exists
-    await this.findOne(id);
+    const classItem = await this.prisma.class.findUnique({
+      where: { id },
+      include: { teacher: true },
+    });
+
+    if (!classItem) {
+      throw new NotFoundException('Class not found');
+    }
 
     // Check for duplicate name if name is being updated
-    if (updateClassDto.name) {
-      const classItem = await this.prisma.class.findUnique({
-        where: { id },
-      });
-
+    if (updateClassDto.name && updateClassDto.name !== classItem.name) {
       const existingClass = await this.prisma.class.findFirst({
         where: {
           name: updateClassDto.name,
-          teacherId: classItem!.teacherId,
+          teacherId: classItem.teacherId,
           NOT: { id },
         },
       });
@@ -224,11 +227,84 @@ export class ClassesService {
       }
     }
 
+    // Handle student emails if provided
+    if (updateClassDto.studentEmails) {
+      const emails = updateClassDto.studentEmails
+        .split(';')
+        .map(email => email.trim())
+        .filter(email => email && email.includes('@'));
+
+      if (emails.length > 0) {
+        await this.parseAndEnrollStudents(id, emails, classItem.teacher.establishmentId);
+      }
+    }
+
+    // Update class (exclude studentEmails from database update)
+    const { studentEmails, ...dataToUpdate } = updateClassDto;
+
     return this.prisma.class.update({
       where: { id },
-      data: updateClassDto,
+      data: dataToUpdate,
       include: this.includeRelations,
     });
+  }
+
+  /**
+   * HELPER - Parse student emails and enroll them
+   */
+  private async parseAndEnrollStudents(
+    classId: string, 
+    emails: string[],
+    establishmentId: string
+  ) {
+    const bcrypt = require('bcrypt');
+
+    for (const email of emails) {
+      // Check if user exists
+      let student = await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+      // If student doesn't exist, create them
+      if (!student) {
+        const defaultPassword = await bcrypt.hash('ChangeMe123!', 10);
+
+        student = await this.prisma.user.create({
+          data: {
+            email,
+            password: defaultPassword,
+            firstname: email.split('@')[0], // Use email prefix as firstname
+            lastname: 'Student',
+            role: 'STUDENT',
+            establishmentId,
+          },
+        });
+
+        console.log(`✅ Created new student: ${email}`);
+      }
+
+      // Check if already enrolled
+      const existingEnrollment = await this.prisma.enrollment.findFirst({
+        where: {
+          classId,
+          studentId: student.id,
+        },
+      });
+
+      // If not enrolled, create enrollment
+      if (!existingEnrollment) {
+        await this.prisma.enrollment.create({
+          data: {
+            classId,
+            studentId: student.id,
+          },
+        });
+
+        console.log(`✅ Enrolled student: ${email} in class`);
+      } else {
+        console.log(`ℹ️  Student ${email} already enrolled`);
+      }
+    }
   }
 
   /**
