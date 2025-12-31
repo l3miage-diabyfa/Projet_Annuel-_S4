@@ -7,6 +7,7 @@ import { UserModule } from './user/user.module';
 import { EstablishmentModule } from './establishment/establishment.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { EmailModule } from './common/email/email.module';
+import { ContactModule } from './contact/contact.module';
 import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     EstablishmentModule,
     SubjectsModule,
     EmailModule,
+    ContactModule,
     ReviewsModule,
   ],
   controllers: [AppController],

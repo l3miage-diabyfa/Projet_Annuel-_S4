@@ -21,6 +21,8 @@ enum Role {
 model Establishment {
   id    String @id @default(uuid())
   name  String @unique
+  shareToken       String?   @unique
+  shareTokenExpiry DateTime?
   users User[]
   // Ajoute ici les relations vers classes, teachers, etc. si besoin
 }
@@ -30,7 +32,7 @@ model User {
   id             String   @id @default(uuid())
   email          String   @unique
   lastname       String
-  password       String
+  password       String?
   firstname      String
   profilePic     String?
   subscriptionId String?
@@ -40,6 +42,8 @@ model User {
   invitationExpiry DateTime?
   resetPasswordToken  String?  @unique
   resetPasswordExpiry DateTime?
+  googleId       String?  @unique
+  provider       String?  @default("local")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   reviews        Review[]
@@ -151,6 +155,23 @@ model Lesson {
   @@index([teacherId])
   // Relations
   @@index([classId])
+}
+
+// Contact model - represents contact form submissions
+model Contact {
+  id           String   @id @default(uuid())
+  organization String
+  lastName     String
+  firstName    String
+  email        String
+  phone        String?
+  classCount   Int
+  message      String?
+  wantsCallback Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
 }
 
 // Review Form Template (created by teachers)

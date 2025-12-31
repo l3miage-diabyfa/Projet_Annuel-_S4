@@ -1,15 +1,16 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { RegisterAdminDto } from './dto/register-admin.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './auth.service';
 import { EmailService } from '../common/email/email.service';
+import { GoogleAuthService } from './google-auth.service';
 
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UnauthorizedException } from '@nestjs/common';
-import { User, Establishment } from '@prisma/client';
+import { Establishment, Role } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -17,6 +18,7 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly authService: AuthService,
     private readonly emailService: EmailService,
+    private readonly googleAuthService: GoogleAuthService,
   ) { }
 
   async registerAdmin(registerAdminDto: RegisterAdminDto) {
@@ -74,6 +76,7 @@ export class UserService {
         email: user.email,
         role: user.role,
         establishment: establishment.name,
+        provider: 'local',
       },
       emailStatus,
       ...(emailError && { emailError }),
@@ -162,6 +165,7 @@ export class UserService {
         email: updatedUser.email,
         role: updatedUser.role,
         establishment: user.establishment.name,
+        provider: 'local',      
       },
       emailStatus,
       ...(emailError && { emailError }),
@@ -224,6 +228,9 @@ export class UserService {
     if (!user) {
       throw new UnauthorizedException('Identifiants invalides');
     }
+    if (!user.password) {
+      throw new UnauthorizedException('Identifiants invalides');
+    }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Identifiants invalides');
@@ -243,13 +250,104 @@ export class UserService {
         email: user.email,
         role: user.role,
         establishment: establishment?.name,
+        provider: user.provider || 'local',
+        profilePic: user.profilePic,
       },
     };
   }
 
-  async getUsersByEstablishment(establishmentId: string) {
-    //protéger cette route dans le controller, seulement les admins et référents peuvent y accéder
-    return this.prisma.user.findMany({ where: { establishmentId } });
+  async getUsersByEstablishment(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.establishmentId) {
+      throw new UnauthorizedException('Utilisateur ou établissement introuvable');
+    }
+    
+    return this.prisma.user.findMany({ 
+      where: { 
+        establishmentId: user.establishmentId,
+        id: { not: userId }, // Exclude the requesting user
+      },
+      select: {
+        id: true,
+        email: true,
+        firstname: true,
+        lastname: true,
+        profilePic: true,
+        role: true,
+      },
+    });
+  }
+
+  async updateUserRole(adminId: string, targetUserId: string, newRole: Role) {
+    const admin = await this.prisma.user.findUnique({ where: { id: adminId } });
+    if (!admin || admin.role !== 'ADMIN') {
+      throw new UnauthorizedException('Seuls les administrateurs peuvent modifier les rôles');
+    }
+
+    const targetUser = await this.prisma.user.findUnique({ where: { id: targetUserId } });
+    if (!targetUser) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    if (targetUser.establishmentId !== admin.establishmentId) {
+      throw new UnauthorizedException('Vous ne pouvez modifier que les utilisateurs de votre établissement');
+    }
+
+    if (adminId === targetUserId) {
+      throw new ConflictException('Vous ne pouvez pas modifier votre propre rôle');
+    }
+
+    // Mettre à jour le rôle
+    const updatedUser = await this.prisma.user.update({
+      where: { id: targetUserId },
+      data: { role: newRole },
+      select: {
+        id: true,
+        email: true,
+        firstname: true,
+        lastname: true,
+        profilePic: true,
+        role: true,
+      },
+    });
+
+    return {
+      message: 'Rôle mis à jour avec succès',
+      user: updatedUser,
+    };
+  }
+
+  async generateShareableInvitationLink(adminId: string) {
+    const admin = await this.prisma.user.findUnique({ 
+      where: { id: adminId },
+      include: { establishment: true },
+    });
+    
+    if (!admin || admin.role !== 'ADMIN') {
+      throw new UnauthorizedException('Seuls les administrateurs peuvent générer des liens d\'invitation');
+    }
+
+    if (!admin.establishmentId) {
+      throw new ConflictException('Établissement introuvable');
+    }
+
+    const shareToken = uuidv4();
+    const shareExpiry = new Date();
+    shareExpiry.setDate(shareExpiry.getDate() + 30); // 30 days validity
+
+    // Update the establishment with the shareable token
+    await this.prisma.establishment.update({
+      where: { id: admin.establishmentId },
+      data: {
+        shareToken,
+        shareTokenExpiry: shareExpiry,
+      },
+    });
+
+    return {
+      shareToken,
+      expiresAt: shareExpiry,
+    };
   }
 
   async getAllUsers() {
@@ -320,6 +418,8 @@ export class UserService {
           email: user.email,
           role: user.role,
           establishmentName: establishment?.name,
+          provider: user.provider,
+          profilePic: user.profilePic,
         },
       };
     }
@@ -335,6 +435,11 @@ export class UserService {
     // update user info if changed
     let updatedUser = user;
     if (hasUserChanges) {
+      // Prevent email change for Google accounts
+      if (user.provider === 'google' && updateData.email && updateData.email !== user.email) {
+        throw new UnauthorizedException('Impossible de modifier l\'email pour un compte Google.');
+      }
+
       updatedUser = await this.prisma.user.update({
         where: { id: userId },
         data: {
@@ -358,6 +463,8 @@ export class UserService {
         email: updatedUser.email,
         role: updatedUser.role,
         establishment: establishmentModified?.name,
+        provider: updatedUser.provider,
+        profilePic: updatedUser.profilePic,
       },
     };
   }
@@ -379,6 +486,11 @@ export class UserService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw new UnauthorizedException('Utilisateur introuvable');
+    }
+
+    // Prevent password change for Google accounts
+    if (user.provider === 'google' || !user.password) {
+      throw new UnauthorizedException('Impossible de modifier le mot de passe pour un compte Google. Gérez votre mot de passe via Google.');
     }
 
     // Check if old password is correct
@@ -504,6 +616,171 @@ export class UserService {
 
     return {
       message: 'Compte et établissement supprimés avec succès',
+    };
+  }
+
+  async googleLogin(googleToken: string) {
+    // Verify the Google token
+    const googleUser = await this.googleAuthService.verifyGoogleToken(googleToken);
+
+    if (!googleUser.emailVerified) {
+      throw new UnauthorizedException('Email Google non vérifié');
+    }
+
+    // Check if user exists
+    let user = await this.prisma.user.findUnique({
+      where: { email: googleUser.email },
+      include: { establishment: true },
+    });
+
+    if (user) {
+      // Update user with Google info if not already set
+      if (!user.googleId) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            googleId: googleUser.googleId,
+            provider: 'google',
+            profilePic: googleUser.profilePic || user.profilePic,
+          },
+          include: { establishment: true },
+        });
+      }
+    } else {
+      // New user - they need to be invited first
+      throw new UnauthorizedException(
+        'Aucun compte trouvé avec cet email Google. Veuillez demander une invitation à votre établissement.'
+      );
+    }
+
+    // Generate JWT
+    const jwt = await this.authService.generateJwt(user);
+
+    return {
+      message: 'Connexion Google réussie',
+      access_token: jwt.access_token,
+      user: {
+        lastname: user.lastname,
+        firstname: user.firstname,
+        email: user.email,
+        role: user.role,
+        establishment: user.establishment?.name,
+        profilePic: user.profilePic,
+        provider: user.provider || 'google',
+      },
+    };
+  }
+
+  async googleCompleteInvitation(googleToken: string, invitationToken: string) {
+    // Verify the Google token
+    const googleUser = await this.googleAuthService.verifyGoogleToken(googleToken);
+
+    if (!googleUser.emailVerified) {
+      throw new UnauthorizedException('Email Google non vérifié');
+    }
+
+    if (!googleUser.email || !googleUser.googleId) {
+      throw new UnauthorizedException('Informations Google incomplètes');
+    }
+
+    // Find user by invitation token
+    const user = await this.prisma.user.findUnique({
+      where: { invitationToken },
+      include: { establishment: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Le lien d\'invitation est invalide ou a déjà été utilisé');
+    }
+
+    if (!user.invitationExpiry || user.invitationExpiry < new Date()) {
+      throw new UnauthorizedException('Le lien d\'invitation a expiré');
+    }
+
+    if (user.email !== googleUser.email) {
+      throw new ConflictException('L\'email Google ne correspond pas à l\'invitation');
+    }
+
+    if (user.password) {
+      throw new ConflictException('Cette invitation a déjà été utilisée');
+    }
+
+    // Update user with Google info
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        firstname: googleUser.firstName || '',
+        lastname: googleUser.lastName || '',
+        googleId: googleUser.googleId!,
+        provider: 'google',
+        profilePic: googleUser.profilePic || null,
+        invitationToken: null,
+        invitationExpiry: null,
+        password: null, // No password for Google users
+      },
+      include: { establishment: true },
+    });
+
+    const jwt = await this.authService.generateJwt(updatedUser);
+
+    // Send welcome email
+    try {
+      await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.firstname, updatedUser.lastname);
+    } catch (error: any) {
+      console.error('⚠️ Erreur envoi email de bienvenue (googleCompleteInvitation):', error?.response || error?.message);
+    }
+
+    return {
+      message: 'Invitation complétée avec succès via Google',
+      access_token: jwt.access_token,
+      user: {
+        lastname: updatedUser.lastname,
+        firstname: updatedUser.firstname,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        establishment: updatedUser.establishment.name,
+        profilePic: updatedUser.profilePic,
+        provider: updatedUser.provider || 'google',
+      },
+    };
+  }
+
+  async removeUserAccess(adminId: string, targetUserId: string) {
+    const admin = await this.prisma.user.findUnique({ 
+      where: { id: adminId },
+      include: { establishment: true }
+    });
+
+    if (!admin) {
+      throw new UnauthorizedException('Administrateur introuvable');
+    }
+
+    if (admin.role !== 'ADMIN') {
+      throw new UnauthorizedException('Seul un administrateur peut supprimer des utilisateurs');
+    }
+
+    const targetUser = await this.prisma.user.findUnique({ 
+      where: { id: targetUserId }
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    if (targetUser.establishmentId !== admin.establishmentId) {
+      throw new UnauthorizedException('Vous ne pouvez supprimer que les utilisateurs de votre établissement');
+    }
+
+    if (targetUser.id === admin.id) {
+      throw new ConflictException('Vous ne pouvez pas supprimer votre propre compte de cette manière');
+    }
+
+    await this.prisma.user.delete({
+      where: { id: targetUserId }
+    });
+
+    return {
+      message: 'Utilisateur supprimé avec succès',
     };
   }
 }

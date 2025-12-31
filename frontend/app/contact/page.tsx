@@ -5,9 +5,12 @@ import { useRouter } from 'next/navigation';
 import Button from '../components/Button';
 import Header from '../../components/home/Header';
 import Footer from '../../components/home/Footer';
+import ConfirmationMessage from './components/ConfirmationMessage';
+import { apiFetch } from '@/utils/api';
 
 export default function ContactPage() {
   const router = useRouter();
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     organization: '',
     lastName: '',
@@ -19,10 +22,39 @@ export default function ContactPage() {
     wantsCallback: false,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    router.push('/contact/confirmation');
+    
+    // Validation des champs requis
+    if (!formData.organization.trim() || 
+        !formData.lastName.trim() || 
+        !formData.firstName.trim() || 
+        !formData.email.trim() ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) ||
+        !formData.classCount || 
+        (formData.wantsCallback && !formData.phone.trim())
+      ) {
+      return;
+    }
+    
+    // Parsing classCount to number
+    const classCountNumber = parseInt(formData.classCount, 10);
+
+    const dataToSend = {
+      ...formData,
+      classCount: classCountNumber,
+    };
+    
+    const { data, error } = await apiFetch('/contact', {
+      method: 'POST',
+      body: dataToSend,
+    });
+
+    if (!error && data?.success) {
+      setIsSubmitted(true);
+    } else {
+      console.error('Erreur lors de l\'envoi:', error);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -38,22 +70,26 @@ export default function ContactPage() {
       <Header />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-24">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Votre établissement dépasse nos<br />
-            formules standards ?
-          </h1>
-          <p className="text-gray-600">
-            L&apos;équipe izzzi vous accompagne pour créer une offre adaptée à votre nombre de<br />
-            classes, à vos besoins spécifiques ou à vos exigences administratives.
-          </p>
-        </div>
+        {isSubmitted ? (
+          <ConfirmationMessage />
+        ) : (
+          <>
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                Votre établissement dépasse nos<br />
+                formules standards ?
+              </h1>
+              <p className="text-gray-600">
+                L&apos;équipe izzzi vous accompagne pour créer une offre adaptée à votre nombre de<br />
+                classes, à vos besoins spécifiques ou à vos exigences administratives.
+              </p>
+            </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                École ou organisme
+                École ou organisme <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -68,7 +104,7 @@ export default function ContactPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom
+                  Nom <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -81,7 +117,7 @@ export default function ContactPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prénom
+                  Prénom <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -96,7 +132,7 @@ export default function ContactPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email professionnel
+                Email professionnel <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -124,10 +160,12 @@ export default function ContactPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nombre approximatif de classes / étudiants
+                Nombre approximatif de classes <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 name="classCount"
                 value={formData.classCount}
                 onChange={handleChange}
@@ -173,6 +211,8 @@ export default function ContactPage() {
             </button>
           </form>
         </div>
+          </>
+        )}
       </main>
 
       <div className="relative mb-16 h-64 md:h-32 overflow-hidden bg-gray-50">
