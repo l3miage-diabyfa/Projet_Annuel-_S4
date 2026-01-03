@@ -168,7 +168,16 @@ export default function PricingPlans({
                 {isAnnual ? '17€' : '22€'}
                 <span className="text-lg font-normal text-black opacity-80"> par mois / par classe</span>
               </div>
-            <Button href={premiumPath} fullWidth icon="↗" className="mb-8">
+            <Button 
+              href={
+                premiumPath.includes('auth') 
+                  ? premiumPath
+                  : `${premiumPath}?interval=${isAnnual ? 'yearly' : 'monthly'}&classes=${numberOfClasses}`
+              } 
+              fullWidth 
+              icon="↗" 
+              className="mb-8"
+            >
                 {premiumButtonText}
             </Button>
             </>

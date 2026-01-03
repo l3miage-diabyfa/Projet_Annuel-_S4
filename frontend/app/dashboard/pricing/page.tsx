@@ -8,6 +8,7 @@ export default function TarifsPage() {
       <main className="max-w-7xl mx-auto">
         <PricingPlans 
           showDetailsButtons={false}
+          showSignupButtons={false}
           contactPath="/dashboard/contact"
           premiumButtonText="Je choisis ce plan"
           premiumPath="/dashboard/pricing/checkout"

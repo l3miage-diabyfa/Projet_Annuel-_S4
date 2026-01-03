@@ -1,18 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { IoArrowBack } from "react-icons/io5";
 import { FaLock } from "react-icons/fa";
 
 export default function PricingCheckoutPage() {
+  const searchParams = useSearchParams();
+  const intervalParam = searchParams.get('interval');
+  const classesParam = searchParams.get('classes');
+  
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly");
+  const [numberOfClasses, setNumberOfClasses] = useState(1);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  useEffect(() => {
+    if (intervalParam) {
+      setBillingPeriod(intervalParam === 'yearly' ? 'yearly' : 'monthly');
+    }
+    if (classesParam) {
+      setNumberOfClasses(parseInt(classesParam) || 1);
+    }
+  }, [intervalParam, classesParam]);
 
   const monthlyPrice = 22;
   const yearlyPricePerMonth = 17;
   const yearlyTotalPrice = yearlyPricePerMonth * 12;
   const currentPrice = billingPeriod === "monthly" ? monthlyPrice : yearlyPricePerMonth;
+  const totalMonthly = currentPrice * numberOfClasses;
+  const totalYearly = yearlyPricePerMonth * numberOfClasses * 12;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -269,12 +286,22 @@ export default function PricingCheckoutPage() {
               </div>
 
               <div className="border-t border-gray-200 pt-6 mb-6">
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Nombre de classes</span>
+                    <span>{numberOfClasses}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Prix par classe</span>
+                    <span>{currentPrice}€/mois</span>
+                  </div>
+                </div>
                 <div className="flex justify-between items-center text-xl font-bold">
                   <span>Total</span>
                   <span>
                     {billingPeriod === "monthly" 
-                      ? `${monthlyPrice}€/mois TTC` 
-                      : `${yearlyTotalPrice}€/an TTC`}
+                      ? `${totalMonthly}€/mois TTC` 
+                      : `${totalYearly}€/an TTC`}
                   </span>
                 </div>
               </div>
@@ -303,12 +330,12 @@ export default function PricingCheckoutPage() {
               >
                 {billingPeriod === "monthly" ? (
                   <>
-                    Valider et payer {monthlyPrice}€/mois{" "}
+                    Valider et payer {totalMonthly}€/mois{" "}
                   </>
                 ) : (
                   <>
-                    Valider et payer {yearlyTotalPrice}€/an{" "}
-                    <span className="text-sm font-normal">(ou {yearlyPricePerMonth}€/mois)</span>
+                    Valider et payer {totalYearly}€/an{" "}
+                    <span className="text-sm font-normal">(ou {totalMonthly}€/mois)</span>
                   </>
                 )}
               </button>
