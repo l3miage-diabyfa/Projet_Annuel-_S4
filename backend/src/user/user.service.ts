@@ -38,6 +38,11 @@ export class UserService {
     }
     
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Calculate trial end date (4 months from now)
+    const trialEndDate = new Date();
+    trialEndDate.setMonth(trialEndDate.getMonth() + 4);
+    
     const { establishment, user } = await this.prisma.$transaction(async (transaction: PrismaService) => {
       const establishment = await transaction.establishment.create({ data: { name: schoolName } });
       const user = await transaction.user.create({
@@ -49,6 +54,7 @@ export class UserService {
           password: hashedPassword,
           role: 'ADMIN',
           establishmentId: establishment.id,
+          trialEndDate,
         },
       });
       return { establishment, user };
@@ -77,6 +83,7 @@ export class UserService {
         role: user.role,
         establishment: establishment.name,
         provider: 'local',
+        trialEndDate: user.trialEndDate?.toISOString(),
       },
       emailStatus,
       ...(emailError && { emailError }),
@@ -252,6 +259,7 @@ export class UserService {
         establishment: establishment?.name,
         provider: user.provider || 'local',
         profilePic: user.profilePic,
+        trialEndDate: user.trialEndDate?.toISOString(),
       },
     };
   }
@@ -686,6 +694,7 @@ export class UserService {
         establishment: user.establishment?.name,
         profilePic: user.profilePic,
         provider: user.provider || 'google',
+        trialEndDate: user.trialEndDate?.toISOString(),
       },
     };
   }
@@ -760,6 +769,7 @@ export class UserService {
         establishment: updatedUser.establishment.name,
         profilePic: updatedUser.profilePic,
         provider: updatedUser.provider || 'google',
+        trialEndDate: updatedUser.trialEndDate?.toISOString(),
       },
     };
   }
