@@ -297,7 +297,7 @@ export class UserService {
       throw new ConflictException('Vous ne pouvez pas modifier votre propre rôle');
     }
 
-    // Mettre à jour le rôle
+    // Update role
     const updatedUser = await this.prisma.user.update({
       where: { id: targetUserId },
       data: { role: newRole },
@@ -348,11 +348,6 @@ export class UserService {
       shareToken,
       expiresAt: shareExpiry,
     };
-  }
-
-  async getAllUsers() {
-    //sécuriser la route
-    return this.prisma.user.findMany();
   }
 
   async updateUser(userId: string, updateData: { firstname?: string; lastname?: string; email?: string; establishmentName?: string }) {
@@ -469,6 +464,30 @@ export class UserService {
     };
   }
 
+  async updateProfilePic(userId: string, profilePic: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur introuvable');
+    }
+
+    // Prevent Google users from updating profilePic
+    if (user.provider === 'google') {
+      throw new ConflictException('Les utilisateurs Google ne peuvent pas modifier leur photo de profil. Elle est automatiquement récupérée de Google.');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { profilePic },
+    });
+
+    return {
+      message: 'Photo de profil mise à jour avec succès',
+      user: {
+        profilePic: updatedUser.profilePic,
+      },
+    };
+  }
+
   // Helper method to hash password and update user
   private async hashAndUpdatePassword(userId: string, newPassword: string, additionalData?: any) {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -517,7 +536,7 @@ export class UserService {
 
     const resetToken = uuidv4();
     const resetExpiry = new Date();
-    resetExpiry.setHours(resetExpiry.getHours() + 1); // Token valide 1 heure
+    resetExpiry.setHours(resetExpiry.getHours() + 1); // Token valid for 1 hour
 
     await this.prisma.user.update({
       where: { email },

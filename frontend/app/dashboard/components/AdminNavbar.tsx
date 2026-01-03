@@ -6,25 +6,19 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import React from "react";
 import { IoNotificationsOutline } from "react-icons/io5";
-import { getUserFromToken } from "@/lib/api";
 import { apiFetch } from "@/utils/api";
 import { getTokenCookie } from "@/utils/cookie";
 import type { EstablishmentUser, Role } from "@/types/user";
 import { usePathname } from "next/navigation";
+import { useUser } from "@/contexts/UserContext";
 
 export default function AdminNavbar() {
   const pathname = usePathname();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [collaborators, setCollaborators] = useState<EstablishmentUser[]>([]);
   const [shareLink, setShareLink] = useState("");
-  const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    // Get current user from token
-    const user = getUserFromToken();
-    setCurrentUser(user);
-  }, []);
+  const { user } = useUser();
 
   useEffect(() => {
     // Load collaborators when modal opens
@@ -190,7 +184,7 @@ export default function AdminNavbar() {
   };
 
   // Only show share button if user is ADMIN
-  const showShareButton = currentUser?.role === 'ADMIN';
+  const showShareButton = user?.role === 'ADMIN';
   
   return (
     <nav className="max-w-[98vw] fixed top-4 left-0 right-0 mx-auto bg-white rounded-xl shadow-sm px-8 py-4 z-50">
@@ -246,13 +240,13 @@ export default function AdminNavbar() {
           {/* User Profile */}
           <div className="flex items-center gap-3">
             <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Emma"
-              alt="Yoann Caoulan"
-              className="w-10 h-10 rounded-full bg-gray-400 grid"
+              src={user?.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'default'}`}
+              alt={user ? `${user.firstname} ${user.lastname}` : 'User'}
+              className="w-10 h-10 rounded-full bg-gray-400 object-cover"
             />
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-900">
-                Yoann Caoulan
+                {user ? `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.email : 'Utilisateur'}
               </span>
               <span className="text-xs font-bold">Plan gratuit</span>
             </div>

@@ -12,6 +12,7 @@ import { UpdatePasswordDto } from './dto/update-password.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
 import { GoogleCompleteInvitationDto } from './dto/google-complete-invitation.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
+import { UpdateProfilePicDto } from './dto/update-profile-pic.dto';
 
 @Controller('user')
 export class UserController {
@@ -49,13 +50,6 @@ export class UserController {
     return this.userService.getUsersByEstablishment(userId);
   }
 
-  @UseGuards(JwtAuthGuard, AdminRoleGuard)
-  @ApiBearerAuth('JWT-auth')
-  @Get('all')
-  async getAllUsers() {
-    return this.userService.getAllUsers();
-  }
-
   @Post('login')
   async login(@Body() loginUserDto: LoginUserDto) {
     return this.userService.login(loginUserDto);
@@ -73,10 +67,18 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
-  @Patch('update')
+  @Patch()
   async updateUser(@Body() updateUserDto: UpdateUserDto, @Request() req) {
     const userId = req.user.userId;
     return this.userService.updateUser(userId, updateUserDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Patch('profile-pic')
+  async updateProfilePic(@Body() updateProfilePicDto: UpdateProfilePicDto, @Request() req) {
+    const userId = req.user.userId;
+    return this.userService.updateProfilePic(userId, updateProfilePicDto.profilePic);
   }
 
   @UseGuards(JwtAuthGuard)
