@@ -1,6 +1,14 @@
 import Link from 'next/link';
 
-export default function ConfirmationMessage() {
+interface ConfirmationMessageProps {
+  returnPath?: string;
+  returnLabel?: string;
+}
+
+export default function ConfirmationMessage({ 
+  returnPath = '/', 
+  returnLabel = "Retourner à l'accueil" 
+}: ConfirmationMessageProps) {
   return (
     <div className="max-w-2xl w-full text-center mx-auto py-12">
       <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -14,11 +22,11 @@ export default function ConfirmationMessage() {
       </p>
 
       <Link 
-        href="/"
+        href={returnPath}
         className="inline-flex items-center gap-2 text-black px-8 py-4 rounded-lg font-semibold hover:opacity-90 transition-opacity text-lg"
         style={{backgroundColor: '#FFE552'}}
       >
-        Retourner à l&apos;accueil
+        {returnLabel}
         <svg 
           width="20" 
           height="20" 

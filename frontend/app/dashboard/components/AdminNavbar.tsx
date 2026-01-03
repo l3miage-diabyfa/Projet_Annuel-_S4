@@ -191,7 +191,7 @@ export default function AdminNavbar() {
       <div className=" mx-auto flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <Link href="/dashboard">
+          <Link href="/dashboard/class">
             <div className="w-auto h-full rounded-full flex items-center justify-center">
               <Image
                 src="/logo.svg"
@@ -238,7 +238,7 @@ export default function AdminNavbar() {
           </button>
 
           {/* User Profile */}
-          <div className="flex items-center gap-3">
+          <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <img
               src={user?.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'default'}`}
               alt={user ? `${user.firstname} ${user.lastname}` : 'User'}
@@ -250,7 +250,7 @@ export default function AdminNavbar() {
               </span>
               <span className="text-xs font-bold">Plan gratuit</span>
             </div>
-          </div>
+          </Link>
           
           {/* Share Button - ADMIN only */}
           {showShareButton && (
