@@ -8,8 +8,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/Honzikoi/izzi
-  FRONTEND_IMAGE: ghcr.io/Honzikoi/izzi
+  BACKEND_IMAGE: ghcr.io/honzikoi/izzi-backend
+  FRONTEND_IMAGE: ghcr.io/honzikoi/izzi-frontend
 
 jobs:
   backend-tests:
