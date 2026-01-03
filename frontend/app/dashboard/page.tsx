@@ -9,7 +9,7 @@ import { FiArrowUpRight, FiBell, FiCheck, FiEdit2, FiDownload, FiCalendar } from
 import { useUser } from "@/contexts/UserContext";
 import { apiFetch } from "@/utils/api";
 
-// Type pour les factures
+// Type for invoices
 interface Invoice {
   id: string;
   date: string;
@@ -41,7 +41,7 @@ export default function DashboardPage() {
     role: "",
   });
 
-  // State séparé pour le formulaire d'édition
+  // Separate state for edit form
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -49,7 +49,7 @@ export default function DashboardPage() {
     establishment: "",
   });
 
-  // Hydrater userInfo depuis le Context
+  // Hydrate userInfo from Context
   useEffect(() => {
     if (user) {
       const userData = {
@@ -57,11 +57,10 @@ export default function DashboardPage() {
         lastName: user.lastname || "",
         email: user.email || "",
         establishment: user.establishment || "",
-        profileImage: null,
+        profileImage: user.profilePic || null,
         role: user.role || "",
       };
       setUserInfo(userData);
-      // Initialiser aussi le formulaire
       setFormData({
         firstName: user.firstname || "",
         lastName: user.lastname || "",
@@ -79,10 +78,10 @@ export default function DashboardPage() {
 
   const [isEditingEstablishment, setIsEditingEstablishment] = useState(false);
   
-  // État pour afficher/masquer la liste des factures
+  // State to show/hide invoice list
   const [showInvoices, setShowInvoices] = useState(false);
   
-  // Factures simulées
+  // Mock invoices
   const [invoices] = useState<Invoice[]>([
     {
       id: "INV-2024-001",
@@ -107,7 +106,7 @@ export default function DashboardPage() {
     },
   ]);
   
-  // Référence pour l'input file
+  // Reference for file input
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUserInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,7 +135,7 @@ export default function DashboardPage() {
         establishment?: string;
       };
     }>(
-      "/user/update",
+      "/user",
       {
         method: "PATCH",
         headers: {
@@ -152,7 +151,7 @@ export default function DashboardPage() {
     );
 
     if (data && data.user) {
-      // Mettre à jour le Context avec les nouvelles infos
+      // Update Context with new info
       setUser(data.user);
       alert(data.message || "Informations mises à jour avec succès !");
     } else {
@@ -234,7 +233,7 @@ export default function DashboardPage() {
 
     if (data) {
       alert(data.message || "Compte supprimé avec succès");
-      // Déconnexion et redirection
+      // Logout and redirect
       removeTokenCookie();
       logoutUser();
       router.replace("/auth/signin");
@@ -247,29 +246,68 @@ export default function DashboardPage() {
     fileInputRef.current?.click();
   };
 
-  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Vérifier le type de fichier
-      if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image valide');
-        return;
-      }
+    if (!file) return;
 
-      // Vérifier la taille (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('L\'image ne doit pas dépasser 5MB');
-        return;
-      }
-
-      // Créer une URL locale pour prévisualiser l'image
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUserInfo({ ...userInfo, profileImage: reader.result as string });
-        alert('Photo de profil mise à jour avec succès !');
-      };
-      reader.readAsDataURL(file);
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      alert('Veuillez sélectionner une image valide');
+      return;
     }
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("L'image ne doit pas dépasser 5 Mo");
+      return;
+    }
+
+    // Convert to base64 and upload
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Image = reader.result as string;
+      
+      // Update local display immediately
+      setUserInfo({ ...userInfo, profileImage: base64Image });
+
+      // Send to backend
+      const token = getTokenCookie();
+      if (!token) {
+        alert("Vous devez être connecté pour modifier votre photo de profil");
+        return;
+      }
+
+      const { data, error } = await apiFetch<{
+        message: string;
+        user: {
+          profilePic: string;
+        };
+      }>(
+        "/user/profile-pic",
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: {
+            profilePic: base64Image,
+          },
+        }
+      );
+
+      if (data) {
+        alert('Photo de profil mise à jour avec succès !');
+        // Update user context
+        if (user) {
+          setUser({ ...user, profilePic: data.user.profilePic });
+        }
+      } else {
+        alert(error || "Erreur lors de la mise à jour de la photo de profil");
+        // Revenir à l'image précédente en cas d'erreur
+        setUserInfo({ ...userInfo, profileImage: user?.profilePic || null });
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDownloadInvoice = (invoice: Invoice) => {
@@ -303,17 +341,22 @@ export default function DashboardPage() {
                       className="w-24 h-24 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-3xl font-bold">
-                      KA
-                    </div>
+                    <img
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userInfo.email}`}
+                      alt="Photo de profil"
+                      className="w-24 h-24 rounded-full object-cover bg-gray-200"
+                    />
                   )}
-                  <button
-                    onClick={handleProfileImageClick}
-                    className="absolute bottom-0 right-0 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center hover:bg-yellow-500 transition-colors"
-                    title="Modifier la photo de profil"
-                  >
-                    <FiEdit2 className="w-4 h-4" />
-                  </button>
+                  {/* Show edit button only for non-Google users */}
+                  {user?.provider !== 'google' && (
+                    <button
+                      onClick={handleProfileImageClick}
+                      className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-yellow-400 hover:bg-yellow-500"
+                      title="Modifier la photo de profil"
+                    >
+                      <FiEdit2 className="w-4 h-4" />
+                    </button>
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
