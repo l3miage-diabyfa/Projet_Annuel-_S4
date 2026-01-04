@@ -40,10 +40,56 @@ export class ClassesService {
     },
   };
 
+  /**
+   * Validates if the user can create a new class based on subscription limits
+   */
+  private async validateClassLimit(user: any) {
+    const now = new Date();
+    
+    // Count current active classes in the establishment
+    const currentClassCount = user.establishment.users.reduce(
+      (total: number, u: any) => total + u.classes.length,
+      0
+    );
+
+    // Case 1: User is in trial period (unlimited classes)
+    if (user.trialEndDate && user.trialEndDate > now) {
+      return; // Unlimited classes during trial
+    }
+
+    // Case 2: User has an active premium subscription
+    if (user.subscription && user.subscription.status === 'ACTIVE') {
+      const limit = user.subscription.numberOfClasses;
+      
+      if (currentClassCount >= limit) {
+        throw new BadRequestException(
+          `Limite de classes atteinte (${currentClassCount}/${limit}). ` +
+          `Veuillez passer à un plan supérieur pour créer plus de classes.`
+        );
+      }
+      return;
+    }
+    return;
+  }
+
   async create(createClassDto: CreateClassDto) {
   // Validate teacher exists
   const teacher = await this.prisma.user.findUnique({
     where: { id: createClassDto.teacherId },
+    include: {
+      subscription: true,
+      establishment: {
+        include: {
+          users: {
+            include: {
+              classes: {
+                where: { isActive: true },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!teacher) {
@@ -54,6 +100,9 @@ export class ClassesService {
   if (teacher.role !== 'TEACHER' && teacher.role !== 'ADMIN') {
     throw new BadRequestException('Seuls les responsables pédagogiques peuvent créer des classes');
   }
+
+  // Check class creation limits
+  await this.validateClassLimit(teacher);
 
   // Check for duplicate class name by same teacher
   const existingClass = await this.prisma.class.findFirst({

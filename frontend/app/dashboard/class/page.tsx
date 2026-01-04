@@ -14,9 +14,11 @@ import {
 } from "./components/ClassModals";
 import { getClasses, archiveClass, createClass, updateClass, getUserFromToken, type Class } from "@/lib/api";
 import { getTokenCookie } from "@/utils/cookie";
+import { useUser } from "@/contexts/UserContext";
 
 export default function ClassPage() {
   const router = useRouter();
+  const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,8 @@ export default function ClassPage() {
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [editingClass, setEditingClass] = useState<any>(null);
 
-  const MAX_CLASSES = 5;
+  // Calculer la limite de classes selon le plan
+  const maxClasses = user?.planType === 'PREMIUM' ? (user?.numberOfClasses || 5) : 5;
   const isAdmin = true; // Get from user data
 
   useEffect(() => {
@@ -79,7 +82,7 @@ setClasses(classesData);
 
   // Handlers
   const handleAddClick = () => {
-    if (classes.length >= MAX_CLASSES) {
+    if (classes.length >= maxClasses) {
       setIsLimitModalOpen(true);
     } else {
       setIsAddModalOpen(true);
@@ -101,8 +104,9 @@ setClasses(classesData);
       
       await loadData();
       setIsAddModalOpen(false);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erreur lors de la création');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || err?.message || 'Erreur lors de la création';
+      alert(errorMessage);
     }
   };
 
@@ -195,7 +199,9 @@ setClasses(classesData);
               {classes.length} classe{classes.length !== 1 ? 's' : ''} disponible{classes.length !== 1 ? 's' : ''}
             </h1>
             <p className="text-gray-500 text-sm">
-              Vous pouvez ajouter jusqu'à {MAX_CLASSES} classes.
+              {user?.planType === 'PREMIUM' 
+                ? `Vous pouvez ajouter jusqu'à ${maxClasses} classes avec votre compte premium.`
+                : "Vous pouvez ajouter jusqu'à 5 classes."}
             </p>
           </div>
 

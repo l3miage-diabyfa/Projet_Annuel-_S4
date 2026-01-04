@@ -435,7 +435,7 @@ export default function DashboardPage() {
                 )}
 
                 <Link
-                  href="/dashboard/pricing"
+                  href="#"
                   className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-black transition-colors border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50"
                 >
                   Accéder au tableau de bord
