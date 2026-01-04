@@ -1,5 +1,6 @@
 import React from "react";
 import { FiX, FiArrowUpRight } from "react-icons/fi";
+import { useRouter } from "next/navigation";
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -300,6 +301,12 @@ export function LimitReachedModal({
   onClose,
   isAdmin = true,
 }: LimitReachedModalProps) {
+  const router = useRouter();
+
+  const handleUpgrade = () => {
+    router.push('/dashboard/pricing/checkout');
+  };
+
   return (
     <BaseModal isOpen={isOpen} onClose={onClose}>
       {isAdmin ? (
@@ -320,9 +327,7 @@ export function LimitReachedModal({
 
           <div className="flex flex-row items-center gap-4">
             <button
-              onClick={() => {
-                console.log("Redirect to upgrade");
-              }}
+              onClick={handleUpgrade}
               className="bg-primary-yellow hover:bg-yellow-400 text-gray-900 font-medium px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               Passer au plan supérieur <FiArrowUpRight className="w-5 h-5" />

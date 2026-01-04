@@ -29,7 +29,7 @@ export default function Footer() {
               <h3 className="text-white font-mochiy mb-4 text-[16px]">Plan du site</h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="/tarifs" className="text-white text-[16px] hover:underline">
+                  <a href="/pricing" className="text-white text-[16px] hover:underline">
                     Nos tarifs
                   </a>
                 </li>

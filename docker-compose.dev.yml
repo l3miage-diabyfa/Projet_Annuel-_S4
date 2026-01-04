@@ -25,6 +25,8 @@ services:
       dockerfile: Dockerfile
     container_name: school-backend-dev
     restart: always
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-school_admin}:${POSTGRES_PASSWORD:-school_password}@postgres:5432/${POSTGRES_DB:-school_db}?schema=public
       NODE_ENV: development
@@ -61,6 +63,18 @@ services:
     networks:
       - school-network
     command: npm run dev
+
+  # Stripe CLI for webhook forwarding
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    container_name: school-stripe-cli
+    environment:
+      STRIPE_API_KEY: ${STRIPE_SECRET_KEY}
+    networks:
+      - school-network
+    command: listen --forward-to http://backend:3000/subscription/webhook --skip-verify
+    depends_on:
+      - backend
 
 volumes:
   postgres_dev_data:

@@ -1,83 +1,109 @@
 "use client";
 
-import React, { useState } from "react";
-import Image from "next/image";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { IoNotificationsOutline, IoArrowBack } from "react-icons/io5";
+import { IoArrowBack } from "react-icons/io5";
 import { FaLock } from "react-icons/fa";
+import { getTokenCookie } from "@/utils/cookie";
 
 export default function PricingCheckoutPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const intervalParam = searchParams.get('interval');
+  const classesParam = searchParams.get('classes');
+  
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly");
+  const [numberOfClasses, setNumberOfClasses] = useState(1);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (intervalParam) {
+      setBillingPeriod(intervalParam === 'yearly' ? 'yearly' : 'monthly');
+    }
+    if (classesParam) {
+      setNumberOfClasses(parseInt(classesParam) || 1);
+    }
+  }, [intervalParam, classesParam]);
 
   const monthlyPrice = 22;
   const yearlyPricePerMonth = 17;
   const yearlyTotalPrice = yearlyPricePerMonth * 12;
   const currentPrice = billingPeriod === "monthly" ? monthlyPrice : yearlyPricePerMonth;
+  const totalMonthly = currentPrice * numberOfClasses;
+  const totalYearly = yearlyPricePerMonth * numberOfClasses * 12;
+
+  const handleValidateAndPay = async () => {
+    setError(null);
+    setIsValidating(true);
+
+    try {
+      const token = getTokenCookie();
+      
+      // Validate checkout
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subscription/validate-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          numberOfClasses,
+          isAnnual: billingPeriod === 'yearly',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la validation');
+      }
+
+      const data = await response.json();
+      console.log('Validation réussie:', data);
+
+      // Create Stripe checkout session
+      const checkoutResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subscription/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          numberOfClasses,
+          isAnnual: billingPeriod === 'yearly',
+        }),
+      });
+
+      if (!checkoutResponse.ok) {
+        const errorData = await checkoutResponse.json();
+        throw new Error(errorData.message || 'Erreur lors de la création de la session Stripe');
+      }
+
+      const checkoutData = await checkoutResponse.json();
+      
+      // Redirect to Stripe Checkout
+      if (checkoutData.url) {
+        window.location.href = checkoutData.url;
+      } else {
+        throw new Error('URL de checkout Stripe non reçue');
+      }
+      
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Erreur validation checkout:', err);
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="max-w-[98vw] fixed top-4 left-0 right-0 mx-auto bg-white rounded-xl shadow-sm px-8 py-4 z-50">
-        <div className="mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/dashboard">
-              <div className="w-auto h-full rounded-full flex items-center justify-center">
-                <Image
-                  src="/logo.svg"
-                  alt="Logo"
-                  width={112}
-                  height={112}
-                  className="w-16 sm:w-20"
-                />
-              </div>
-            </Link>
-          </div>
-
-          <div className="flex flex-col items-center p-2 bg-gray-50 border border-gray-200 rounded-lg">
-            <div className="flex gap-2">
-              <Link
-                href="/dashboard/class"
-                className="flex-1 py-3 px-5 whitespace-nowrap rounded-sm font-medium text-center transition-colors bg-gray-900 text-white"
-              >
-                Mes classes
-              </Link>
-              <Link
-                href="/dashboard"
-                className="flex-1 py-3 px-5 whitespace-nowrap rounded-sm font-medium text-center transition-colors bg-transparent text-gray-900 hover:bg-gray-100"
-              >
-                Dashboard
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button 
-              className="p-2 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
-              aria-label="Notifications"
-            >
-              <IoNotificationsOutline className="w-6 h-6 text-gray-700" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Emma"
-                alt="Yoann Caoulan"
-                className="w-10 h-10 rounded-full bg-gray-400"
-              />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-900">
-                  Yoann Caoulan
-                </span>
-                <span className="text-xs font-bold">Plan gratuit</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
 
       <div className="pt-32 pb-12 px-4 max-w-7xl mx-auto">
         <Link
-          href="/tarifs"
+          href="/dashboard/class"
           className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-8 transition-colors"
         >
           <IoArrowBack className="w-5 h-5" />
@@ -105,80 +131,6 @@ export default function PricingCheckoutPage() {
             <p className="text-gray-600 mb-6">
               Changez de plan pour débloquer les retours illimités
             </p>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email de facturation
-              </label>
-              <input
-                type="email"
-                placeholder="yoann.caoulan@example.com"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom
-                </label>
-                <input
-                  type="text"
-                  placeholder="Doe"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prénom
-                </label>
-                <input
-                  type="text"
-                  placeholder="John"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="mb-6 pt-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Informations de carte
-              </h3>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Numéro de carte
-                </label>
-                <input
-                  type="text"
-                  placeholder="1234 5678 9012 3456"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date d&apos;expiration
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="MM/AA"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Code CVC
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="123"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                  />
-                </div>
-              </div>
-            </div>
 
             <div className="mb-6 pt-6 border-t border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -327,12 +279,22 @@ export default function PricingCheckoutPage() {
               </div>
 
               <div className="border-t border-gray-200 pt-6 mb-6">
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Nombre de classes</span>
+                    <span>{numberOfClasses}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Prix par classe</span>
+                    <span>{currentPrice}€/mois</span>
+                  </div>
+                </div>
                 <div className="flex justify-between items-center text-xl font-bold">
                   <span>Total</span>
                   <span>
                     {billingPeriod === "monthly" 
-                      ? `${monthlyPrice}€/mois TTC` 
-                      : `${yearlyTotalPrice}€/an TTC`}
+                      ? `${totalMonthly}€/mois TTC` 
+                      : `${totalYearly}€/an TTC`}
                   </span>
                 </div>
               </div>
@@ -354,19 +316,28 @@ export default function PricingCheckoutPage() {
                 </label>
               </div>
 
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-800">{error}</p>
+                </div>
+              )}
+
               <button
-                disabled={!acceptedTerms}
+                onClick={handleValidateAndPay}
+                disabled={!acceptedTerms || isValidating}
                 className="w-full disabled:bg-gray-300 disabled:cursor-not-allowed text-gray-900 font-bold py-4 px-6 rounded-lg transition-colors mb-4 hover:opacity-90"
-                style={{ backgroundColor: acceptedTerms ? '#FFE552' : undefined }}
+                style={{ backgroundColor: acceptedTerms && !isValidating ? '#FFE552' : undefined }}
               >
-                {billingPeriod === "monthly" ? (
+                {isValidating ? (
+                  'Validation en cours...'
+                ) : billingPeriod === "monthly" ? (
                   <>
-                    Valider et payer {monthlyPrice}€/mois{" "}
+                    Valider et payer {totalMonthly}€/mois{" "}
                   </>
                 ) : (
                   <>
-                    Valider et payer {yearlyTotalPrice}€/an{" "}
-                    <span className="text-sm font-normal">(ou {yearlyPricePerMonth}€/mois)</span>
+                    Valider et payer {totalYearly}€/an{" "}
+                    <span className="text-sm font-normal">(ou {totalMonthly}€/mois)</span>
                   </>
                 )}
               </button>

@@ -50,6 +50,14 @@ export class UserController {
     return this.userService.getUsersByEstablishment(userId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('me')
+  async getCurrentUser(@Request() req) {
+    const userId = req.user.userId;
+    return this.userService.getCurrentUser(userId);
+  }
+
   @Post('login')
   async login(@Body() loginUserDto: LoginUserDto) {
     return this.userService.login(loginUserDto);

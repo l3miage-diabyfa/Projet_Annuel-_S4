@@ -38,6 +38,11 @@ export class UserService {
     }
     
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Calculate trial end date (4 months from now)
+    const trialEndDate = new Date();
+    trialEndDate.setMonth(trialEndDate.getMonth() + 4);
+    
     const { establishment, user } = await this.prisma.$transaction(async (transaction: PrismaService) => {
       const establishment = await transaction.establishment.create({ data: { name: schoolName } });
       const user = await transaction.user.create({
@@ -49,6 +54,7 @@ export class UserService {
           password: hashedPassword,
           role: 'ADMIN',
           establishmentId: establishment.id,
+          trialEndDate,
         },
       });
       return { establishment, user };
@@ -77,6 +83,10 @@ export class UserService {
         role: user.role,
         establishment: establishment.name,
         provider: 'local',
+        trialEndDate: user.trialEndDate?.toISOString(),
+        planType: 'FREE',
+        subscriptionStatus: 'TRIALING',
+        numberOfClasses: null,
       },
       emailStatus,
       ...(emailError && { emailError }),
@@ -141,6 +151,9 @@ export class UserService {
         invitationToken: null,
         invitationExpiry: null,
       },
+      include: {
+        subscription: true,
+      },
     });
 
     const jwt = await this.authService.generateJwt(updatedUser);
@@ -165,7 +178,10 @@ export class UserService {
         email: updatedUser.email,
         role: updatedUser.role,
         establishment: user.establishment.name,
-        provider: 'local',      
+        provider: 'local',
+        planType: updatedUser.subscription?.planType || 'FREE',
+        subscriptionStatus: updatedUser.subscription?.status,
+        numberOfClasses: updatedUser.subscription?.numberOfClasses,
       },
       emailStatus,
       ...(emailError && { emailError }),
@@ -224,7 +240,13 @@ export class UserService {
 
   async login(loginUserDto: LoginUserDto) {
     const { email, password } = loginUserDto;
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ 
+      where: { email },
+      include: {
+        establishment: true,
+        subscription: true,
+      },
+    });
     if (!user) {
       throw new UnauthorizedException('Identifiants invalides');
     }
@@ -236,10 +258,6 @@ export class UserService {
       throw new UnauthorizedException('Identifiants invalides');
     }
     const jwt = await this.authService.generateJwt(user);
-    // Get establishment name
-    const establishment = await this.prisma.establishment.findUnique({ 
-      where: { id: user.establishmentId } 
-    });
     
     return {
       message: 'Connexion réussie',
@@ -249,10 +267,42 @@ export class UserService {
         firstname: user.firstname,
         email: user.email,
         role: user.role,
-        establishment: establishment?.name,
+        establishment: user.establishment?.name,
         provider: user.provider || 'local',
         profilePic: user.profilePic,
+        trialEndDate: user.trialEndDate?.toISOString(),
+        planType: user.subscription?.planType || 'FREE',
+        subscriptionStatus: user.subscription?.status,
+        numberOfClasses: user.subscription?.numberOfClasses,
       },
+    };
+  }
+
+  async getCurrentUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        establishment: true,
+        subscription: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur introuvable');
+    }
+
+    return {
+      firstname: user.firstname,
+      lastname: user.lastname,
+      email: user.email,
+      role: user.role,
+      establishment: user.establishment?.name,
+      provider: user.provider || 'local',
+      profilePic: user.profilePic,
+      trialEndDate: user.trialEndDate?.toISOString(),
+      planType: user.subscription?.planType || 'FREE',
+      subscriptionStatus: user.subscription?.status,
+      numberOfClasses: user.subscription?.numberOfClasses,
     };
   }
 
@@ -649,7 +699,10 @@ export class UserService {
     // Check if user exists
     let user = await this.prisma.user.findUnique({
       where: { email: googleUser.email },
-      include: { establishment: true },
+      include: { 
+        establishment: true,
+        subscription: true,
+      },
     });
 
     if (user) {
@@ -662,7 +715,10 @@ export class UserService {
             provider: 'google',
             profilePic: googleUser.profilePic || user.profilePic,
           },
-          include: { establishment: true },
+          include: { 
+            establishment: true,
+            subscription: true,
+          },
         });
       }
     } else {
@@ -686,6 +742,9 @@ export class UserService {
         establishment: user.establishment?.name,
         profilePic: user.profilePic,
         provider: user.provider || 'google',
+        trialEndDate: user.trialEndDate?.toISOString(),
+        planType: user.subscription?.planType || 'FREE',
+        subscriptionStatus: user.subscription?.status,
       },
     };
   }
@@ -737,7 +796,10 @@ export class UserService {
         invitationExpiry: null,
         password: null, // No password for Google users
       },
-      include: { establishment: true },
+      include: { 
+        establishment: true,
+        subscription: true,
+      },
     });
 
     const jwt = await this.authService.generateJwt(updatedUser);
@@ -760,6 +822,10 @@ export class UserService {
         establishment: updatedUser.establishment.name,
         profilePic: updatedUser.profilePic,
         provider: updatedUser.provider || 'google',
+        trialEndDate: updatedUser.trialEndDate?.toISOString(),
+        planType: updatedUser.subscription?.planType || 'FREE',
+        subscriptionStatus: updatedUser.subscription?.status,
+        numberOfClasses: updatedUser.subscription?.numberOfClasses,
       },
     };
   }
