@@ -6,6 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../common/email/email.service';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { ImportSubjectsCsvDto, SubjectCsvRowDto } from './dto/import-subjects-csv.dto';
@@ -13,7 +14,10 @@ import { AttachFormsDto } from './dto/attach-forms.dto';
 
 @Injectable()
 export class SubjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
 
   /**
    * CREATE - Create a new subject
@@ -269,7 +273,18 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
     return this.prisma.subject.findMany({
       where: { classId },
       orderBy: { createdAt: 'desc' },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        instructorName: true,
+        instructorEmail: true,
+        firstLessonDate: true,
+        lastLessonDate: true,
+        classId: true,
+        duringFormSentAt: true,
+        afterFormSentAt: true,
+        createdAt: true,
+        updatedAt: true,
         class: {
           select: {
             id: true,
@@ -595,6 +610,124 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
         totalResponses: subject.afterForm.reviews.length,
         publicLink: `${process.env.FRONTEND_URL}/review/${subject.afterForm.publicLink}`,
       } : null,
+    };
+  }
+
+  /**
+   * Envoyer manuellement les invitations de formulaire d'avis
+   */
+  async sendReviewInvitations(
+    subjectId: string,
+    formType: 'DURING_CLASS' | 'AFTER_CLASS',
+    userId: string,
+  ) {
+    // Récupérer la matière avec tous les détails
+    const subject = await this.prisma.subject.findUnique({
+      where: { id: subjectId },
+      include: {
+        class: {
+          include: {
+            teacher: true,
+            enrollments: {
+              include: {
+                student: {
+                  select: {
+                    email: true,
+                    firstname: true,
+                    lastname: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        duringForm: true,
+        afterForm: true,
+      },
+    });
+
+    if (!subject) {
+      throw new NotFoundException('Matière introuvable');
+    }
+
+    // Vérifier que l'utilisateur a le droit
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    const isTeacherOfClass = subject.class.teacherId === userId;
+    const isAuthorized = isTeacherOfClass || user.role === 'ADMIN';
+
+    if (!isAuthorized) {
+      throw new ForbiddenException(
+        'Vous n\'êtes pas autorisé à envoyer des invitations pour cette matière',
+      );
+    }
+
+    // Vérifier que le formulaire correspondant existe
+    const form = formType === 'DURING_CLASS' ? subject.duringForm : subject.afterForm;
+
+    if (!form) {
+      throw new BadRequestException(
+        `Aucun formulaire "${formType === 'DURING_CLASS' ? 'pendant le cours' : 'fin du cours'}" n'est associé à cette matière`,
+      );
+    }
+
+    if (!form.publicLink) {
+      throw new BadRequestException(
+        'Le formulaire n\'a pas de lien public configuré',
+      );
+    }
+
+    // Récupérer les étudiants
+    const students = subject.class.enrollments.map((enrollment) => ({
+      email: enrollment.student.email,
+      firstname: enrollment.student.firstname,
+    }));
+
+    if (students.length === 0) {
+      throw new BadRequestException(
+        'Aucun étudiant inscrit dans cette classe',
+      );
+    }
+
+    // Envoyer les emails
+    const formTypeLabel =
+      formType === 'DURING_CLASS' ? 'Pendant le cours' : 'Fin du cours';
+
+    const result = await this.emailService.sendBulkReviewInvitations(
+      students,
+      {
+        subjectName: subject.name,
+        className: subject.class.name,
+        instructorName: subject.instructorName || 'Intervenant',
+        formType: formTypeLabel,
+        publicLink: form.publicLink,
+      },
+    );
+
+    // Mettre à jour la date d'envoi
+    const sentAtField =
+      formType === 'DURING_CLASS' ? 'duringFormSentAt' : 'afterFormSentAt';
+
+    await this.prisma.subject.update({
+      where: { id: subjectId },
+      data: {
+        [sentAtField]: new Date(),
+      },
+    });
+
+    return {
+      message: 'Invitations envoyées avec succès',
+      subjectName: subject.name,
+      formType: formTypeLabel,
+      sent: result.sent,
+      failed: result.failed,
+      totalStudents: students.length,
     };
   }
 }

@@ -239,6 +239,48 @@ export class ReviewsService {
   }
 
   /**
+   * GET - Get review form by public link (PUBLIC)
+   */
+  async getReviewFormByPublicLink(publicLink: string) {
+    const form = await this.prisma.reviewForm.findUnique({
+      where: { publicLink },
+      include: {
+        fields: {
+          orderBy: { order: 'asc' },
+        },
+        class: {
+          select: { id: true, name: true },
+        },
+        subject: {
+          select: { 
+            id: true, 
+            name: true,
+            class: {
+              select: { id: true, name: true }
+            }
+          },
+        },
+      },
+    });
+
+    if (!form) {
+      throw new NotFoundException('Formulaire introuvable');
+    }
+
+    if (!form.isActive) {
+      throw new BadRequestException('Ce formulaire n\'est plus actif');
+    }
+
+    // Si le formulaire n'a pas de classe directe mais a un subject, utiliser la classe du subject
+    const result = {
+      ...form,
+      class: form.class || form.subject?.class || null,
+    };
+
+    return result;
+  }
+
+  /**
    * GET - Get all forms for a class (TEACHER only)
    */
   async getFormsByClass(classId: string, userId: string) {
@@ -288,7 +330,13 @@ export class ReviewsService {
   async getReviewsForForm(formId: string, userId: string) {
     const form = await this.prisma.reviewForm.findUnique({
       where: { id: formId },
-      include: { class: true },
+      include: { 
+        class: true,
+        subject: true,
+        fields: {
+          orderBy: { order: 'asc' },
+        },
+      },
     });
 
     if (!form) {
@@ -306,10 +354,10 @@ export class ReviewsService {
 
     // Only check ownership if user is TEACHER (not ADMIN)
     if (user.role === 'TEACHER' && form.class && form.class.teacherId !== userId) {
-    throw new ForbiddenException('Accès refusé');
-  }
+      throw new ForbiddenException('Accès refusé');
+    }
 
-    return this.prisma.review.findMany({
+    const reviews = await this.prisma.review.findMany({
       where: { formId },
       include: {
         responses: {
@@ -327,6 +375,17 @@ export class ReviewsService {
       },
       orderBy: { submittedAt: 'desc' },
     });
+
+    // Return form with reviews
+    return {
+      id: form.id,
+      title: form.title,
+      type: form.type,
+      class: form.class ? { id: form.class.id, name: form.class.name } : null,
+      subject: form.subject ? { id: form.subject.id, name: form.subject.name } : null,
+      fields: form.fields,
+      reviews,
+    };
   }
 
   /**

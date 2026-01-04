@@ -44,11 +44,20 @@ export class ReviewsController {
 
   /**
    * GET /reviews/forms/:formId
-   * Get review form (PUBLIC - no auth)
+   * Get review form by ID (PUBLIC - no auth)
    */
   @Get('forms/:formId')
   getForm(@Param('formId', ParseUUIDPipe) formId: string) {
     return this.reviewsService.getReviewForm(formId);
+  }
+
+  /**
+   * GET /reviews/public/:publicLink
+   * Get review form by public link (PUBLIC - no auth)
+   */
+  @Get('public/:publicLink')
+  getFormByPublicLink(@Param('publicLink') publicLink: string) {
+    return this.reviewsService.getReviewFormByPublicLink(publicLink);
   }
 
   /**

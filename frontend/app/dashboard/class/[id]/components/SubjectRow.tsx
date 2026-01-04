@@ -102,8 +102,10 @@ export default function SubjectRow({
                     publicLink: subject.duringForm.publicLink,
                     feedbackCount: subject.duringForm._count?.reviews || 0,
                     totalStudents,
+                    sentAt: subject.duringFormSentAt,
                   }}
                   classId={classId}
+                  subjectId={subject.id}
                 />
               )}
 
@@ -117,8 +119,10 @@ export default function SubjectRow({
                     publicLink: subject.afterForm.publicLink,
                     feedbackCount: subject.afterForm._count?.reviews || 0,
                     totalStudents,
+                    sentAt: subject.afterFormSentAt,
                   }}
                   classId={classId}
+                  subjectId={subject.id}
                 />
               )}
             </div>
