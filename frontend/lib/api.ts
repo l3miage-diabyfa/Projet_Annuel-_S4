@@ -246,6 +246,27 @@ export async function deleteSubject(id: string): Promise<void> {
   }
 }
 
+// ===== REVIEW INVITATIONS API =====
+export async function sendReviewInvitations(
+  subjectId: string,
+  formType: 'DURING_CLASS' | 'AFTER_CLASS'
+): Promise<{
+  message: string;
+  subjectName: string;
+  formType: string;
+  sent: number;
+  failed: number;
+  totalStudents: number;
+}> {
+  const response = await fetch(`${API_URL}/subjects/${subjectId}/send-review-invitations`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ formType }),
+  });
+
+  return handleResponse(response);
+}
+
 export async function register(data: {
   schoolName: string;
   email: string;

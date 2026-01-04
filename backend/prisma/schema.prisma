@@ -164,6 +164,10 @@ model Subject {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
+  // Review invitation tracking
+  duringFormSentAt  DateTime? // Sent date of "during the course" review form
+  afterFormSentAt   DateTime? // Sent date of "after the course" review form
+
   // Link to review Forms
   duringFormId      String?
   afterFormId       String?
