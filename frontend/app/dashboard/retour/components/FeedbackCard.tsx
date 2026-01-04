@@ -25,6 +25,7 @@ export interface Feedback {
   summary: string;
   endDate: string;
   formId?: string;
+  isFinished?: boolean;
 }
 
 interface FeedbackCardProps {
@@ -136,9 +137,12 @@ export default function FeedbackCard({ feedback }: FeedbackCardProps) {
       {/* Footer */}
       <div className="mt-auto pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-50">
         <div className="w-full sm:w-auto">
-          <button className="button-primary">
+          <Link 
+            href={feedback.formId ? `/dashboard/reviews/${feedback.formId}` : '#'}
+            className="button-primary"
+          >
             Voir les retours <FiArrowUpRight className="w-4 h-4" />
-          </button>
+          </Link>
         </div>
 
         <div className="flex flex-col items-end gap-1 w-full sm:w-auto text-right">

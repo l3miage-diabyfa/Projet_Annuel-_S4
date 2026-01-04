@@ -6,6 +6,6 @@ export class InviteUserDto {
   @IsNotEmpty()
   email: string;
 
-  @IsEnum(Role, { message: 'Le rôle doit être ADMIN ou REFERENT.' })
+  @IsEnum(Role, { message: 'Le rôle doit être ADMIN ou TEACHER.' })
   role: Role;
 }

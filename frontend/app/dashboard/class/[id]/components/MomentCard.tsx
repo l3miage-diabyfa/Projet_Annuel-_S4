@@ -10,8 +10,9 @@ import {
   FiRefreshCw,
   FiCopy,
   FiCheckCircle,
+  FiSend,
 } from "react-icons/fi";
-import { sendReminderEmails } from "@/lib/api";
+import { sendReminderEmails, sendReviewInvitations } from "@/lib/api";
 
 interface MomentCardProps {
   moment: {
@@ -21,15 +22,21 @@ interface MomentCardProps {
     publicLink: string;
     feedbackCount: number;
     totalStudents: number;
+    sentAt?: string | null;
   };
   classId: string;
+  subjectId: string;
 }
 
-export default function MomentCard({ moment, classId }: MomentCardProps) {
+export default function MomentCard({ moment, classId, subjectId }: MomentCardProps) {
   const [copying, setCopying] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendingInitial, setSendingInitial] = useState(false);
 
   const publicUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3001'}/review/${moment.publicLink}`;
+  
+  const formType = moment.type === "during" ? "DURING_CLASS" : "AFTER_CLASS";
+  const hasBeenSent = !!moment.sentAt;
 
   async function handleCopyLink() {
     try {
@@ -58,6 +65,23 @@ export default function MomentCard({ moment, classId }: MomentCardProps) {
       alert(err instanceof Error ? err.message : 'Erreur lors de l\'envoi');
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleSendInvitations() {
+    console.log('📧 Envoi invitations:', { momentType: moment.type, momentLabel: moment.label, formType });
+    
+    if (!confirm(`Envoyer les invitations "${moment.label}" à tous les étudiants ?`)) return;
+
+    setSendingInitial(true);
+    try {
+      const result = await sendReviewInvitations(subjectId, formType);
+      alert(`✅ Invitations envoyées à ${result.sent} étudiant(s)`);
+      window.location.reload(); // Refresh to update sentAt status
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erreur lors de l\'envoi');
+    } finally {
+      setSendingInitial(false);
     }
   }
 
@@ -99,14 +123,25 @@ export default function MomentCard({ moment, classId }: MomentCardProps) {
 
       {/* Reminder */}
       <div className="col-span-2 flex justify-center">
-        <button 
-          onClick={handleSendReminder}
-          disabled={sending}
-          className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-900 transition-colors underline decoration-gray-300 whitespace-nowrap disabled:opacity-50"
-        >
-          {sending ? 'Envoi...' : 'Relancer les étudiants'}
-          <FiRefreshCw className="w-3 h-3" />
-        </button>
+        {!hasBeenSent ? (
+          <button 
+            onClick={handleSendInvitations}
+            disabled={sendingInitial}
+            className="flex items-center gap-2 text-xs font-medium text-white bg-primary-orange hover:bg-orange-600 px-4 py-2 rounded-md transition-colors whitespace-nowrap disabled:opacity-50"
+          >
+            {sendingInitial ? 'Envoi...' : 'Envoyer maintenant'}
+            <FiSend className="w-3 h-3" />
+          </button>
+        ) : (
+          <button 
+            onClick={handleSendReminder}
+            disabled={sending}
+            className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-900 transition-colors underline decoration-gray-300 whitespace-nowrap disabled:opacity-50"
+          >
+            {sending ? 'Envoi...' : 'Relancer les étudiants'}
+            <FiRefreshCw className="w-3 h-3" />
+          </button>
+        )}
       </div>
 
       {/* Results */}

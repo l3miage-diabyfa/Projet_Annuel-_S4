@@ -39,7 +39,7 @@ export class EmailService {
   async sendInvitationConfirmationToAdmin(adminEmail: string, firstName: string, lastName: string, invitedEmail: string): Promise<boolean> {
     const roleLabels: Record<string, string> = {
       'ADMIN': 'Administrateur',
-      'REFERENT': 'Référent'
+      'TEACHER': 'Référent'
     };
 
     return await this.senderService.sendEmail({

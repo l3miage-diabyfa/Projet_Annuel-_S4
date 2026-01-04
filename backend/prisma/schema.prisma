@@ -14,7 +14,6 @@ enum Role {
   TEACHER
   STUDENT
   ADMIN
-  REFERENT
 }
 
 // Subscription Plan Types
@@ -164,6 +163,10 @@ model Subject {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
+  // Review invitation tracking
+  duringFormSentAt  DateTime? // Sent date of "during the course" review form
+  afterFormSentAt   DateTime? // Sent date of "after the course" review form
+
   // Link to review Forms
   duringFormId      String?
   afterFormId       String?
@@ -220,7 +223,7 @@ model ReviewForm {
   classId     String?
   subjectId   String?  // Optional: specific to a subject
   isActive    Boolean  @default(true)
-  publicLink  String?   @default(uuid())
+  publicLink  String?  @unique @default(uuid())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

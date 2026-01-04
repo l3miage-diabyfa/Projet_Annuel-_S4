@@ -119,4 +119,22 @@ export class SubjectsController {
   ) {
     return this.subjectsService.getSubjectWithFormStats(id, req.user.userId);
   }
+
+  /**
+   * POST /subjects/:id/send-review-invitations
+   * Envoyer manuellement les invitations de formulaire d'avis
+   */
+  @Post(':id/send-review-invitations')
+  @HttpCode(HttpStatus.OK)
+  async sendReviewInvitations(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { formType: 'DURING_CLASS' | 'AFTER_CLASS' },
+    @Request() req,
+  ) {
+    return this.subjectsService.sendReviewInvitations(
+      id,
+      body.formType,
+      req.user.userId,
+    );
+  }
 }
