@@ -35,9 +35,18 @@ export class ClassesController {
    * Get all classes (optionally filter by teacherId)
    */
   @Get()
-  findAll(@Query('teacherId') teacherId?: string) {
-    return this.classesService.findAll(teacherId);
-  }
+  findAll(
+    @Query('teacherId') teacherId?: string,
+    @Query('isActive') isActive?: string,
+  ) {
+    // Convert string "true"/"false" to boolean
+    const isActiveBoolean = 
+      isActive === 'true' ? true : 
+      isActive === 'false' ? false : 
+      undefined;
+    
+  return this.classesService.findAll(teacherId, isActiveBoolean);
+}
 
   /**
    * GET /classes/teacher/:teacherId
@@ -112,5 +121,23 @@ export class ClassesController {
     @Param('studentId', ParseUUIDPipe) studentId: string,
   ) {
     return this.classesService.removeStudent(classId, studentId);
+  }
+
+  /**
+   * PATCH /classes/:id/archive
+   * Archive a class
+   */
+  @Patch(':id/archive')
+  archive(@Param('id', ParseUUIDPipe) id: string) {
+    return this.classesService.archive(id);
+  }
+
+  /**
+   * PATCH /classes/:id/unarchive
+   * Unarchive (reactivate) a class
+   */
+  @Patch(':id/unarchive')
+  unarchive(@Param('id', ParseUUIDPipe) id: string) {
+    return this.classesService.unarchive(id);
   }
 }

@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Istok+Web:ital,wght@0,400;0,700;1,400;1,700&family=Mochiy+Pop+One&family=Roboto:wght@500&display=swap");
 @import "tailwindcss";
 
 /* Custom slider styles */
@@ -19,7 +20,7 @@ input[type="range"].slider::-webkit-slider-thumb {
   border-radius: 50%;
   border: 2px solid #ea580c;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 input[type="range"].slider::-moz-range-thumb {
@@ -29,5 +30,113 @@ input[type="range"].slider::-moz-range-thumb {
   border-radius: 50%;
   border: 2px solid #ea580c;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+:root {
+  --background: #f4f4f4;
+  --foreground: #171717;
+  --primary: #ffe552;
+
+  /* Couleurs Izzi */
+  --primary-yellow: #ffd93d;
+  --primary-orange: #ff6b35;
+  --cream: #fef5e7;
+  --dark: #2d2d2d;
+  --gray: #6b6b6b;
+}
+
+@theme inline {
+  /* Couleurs existantes */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+
+  /* Couleurs Izzi ajoutées */
+  --color-primary-yellow: var(--primary-yellow);
+  --color-primary-orange: var(--primary-orange);
+  --color-cream: var(--cream);
+  --color-dark: var(--dark);
+  --color-gray: var(--gray);
+
+  /* Polices */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-mochiy: "Mochiy Pop One", sans-serif;
+  --font-text: var(--font-text);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: #d9d9d9;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Composant Input */
+.input {
+  @apply w-full px-4 py-4 rounded-lg border border-gray-300 mb-2 focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white text-base;
+}
+
+/* Composant Button Primary  */
+.button-primary {
+  @apply bg-primary cursor-pointer text-gray-900 rounded-lg py-4 w-full px-6 hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2;
+}
+
+/* Composant Button Primary Dark */
+.button-primary-dark {
+  @apply bg-gray-900 text-white py-2 px-6 rounded-lg font-medium hover:bg-gray-800 transition-colors;
+}
+
+/* Composant Button Secondary */
+.button-secondary {
+  @apply bg-gray-200 text-gray-700 py-4 px-6 rounded-lg font-medium hover:bg-gray-300 transition-colors;
+}
+
+/* Composant Button Outline */
+.button-outline {
+  @apply bg-white border border-gray-300 text-gray-900 py-4 px-6 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2;
+}
+
+/* Composant Button Link */
+.button-link {
+  @apply underline text-blue-700 hover:text-blue-800 transition-colors font-medium;
+}
+
+/* Composant Button Text */
+.button-text {
+  @apply bg-transparent text-gray-900 py-4 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors;
+}
+
+/* Classe spécifique pour les titres avec police Mochiy */
+.title-mochiy {
+  font-family: var(--font-mochiy), "Mochiy Pop One", cursive;
+}
+
+/* Scroll behavior fluide */
+html {
+  scroll-behavior: smooth;
+}
+button {
+  cursor: pointer;
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

@@ -3,16 +3,28 @@ import { IsString, IsNotEmpty, IsOptional, IsUUID, MinLength, MaxLength } from '
 export class CreateClassDto {
   @IsString()
   @IsNotEmpty()
-  @MinLength(3, { message: 'Class name must be at least 3 characters' })
-  @MaxLength(100, { message: 'Class name must not exceed 100 characters' })
+  @MinLength(1, { message: 'Nom de classe doit contenir 1 charactère' })
+  @MaxLength(100, { message: 'Nom de classe ne doit pas dépasser 100 caractères' })
   name: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(500, { message: 'Description must not exceed 500 characters' })
+  @MaxLength(500, { message: 'Description ne doit pas dépasser 500 caractères' })
   description?: string;
 
-  @IsUUID('4', { message: 'Teacher ID must be a valid UUID' })
+  @IsString()
+  @IsNotEmpty({ message: 'Année académique est requise' })
+  academicYear: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Niveau de classe est requis' })
+  gradeLevel: string;
+
+  @IsUUID('4', { message: 'L\'ID du professeur doit être un UUID valide' })
   @IsNotEmpty()
   teacherId: string;
+
+  @IsOptional()
+  @IsString()
+  studentEmails?: string;
 }

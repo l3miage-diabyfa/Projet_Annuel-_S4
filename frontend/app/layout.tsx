@@ -1,16 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import Script from 'next/script';
+import { Poppins, Mochiy_Pop_One, Pacifico } from "next/font/google";
 import "./globals.css";
+import NextTopLoader from "nextjs-toploader";
+import { UserProvider } from "@/contexts/UserContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const mochiyPopOne = Mochiy_Pop_One({
+  variable: "--font-mochiy",
   subsets: ["latin"],
+  weight: ["400"],
+});
+
+const pacifico = Pacifico({
+  variable: "--font-pacifico",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -28,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
-        {/* ✅ Google Analytics - Only in production */}
+        {/* Google Analytics - Only in production */}
         {GA_ID && process.env.NODE_ENV === 'production' && (
           <>
             <Script
@@ -47,9 +57,12 @@ export default function RootLayout({
         )}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${poppins.variable} ${mochiyPopOne.variable} ${pacifico.variable} antialiased`}
       >
-        {children}
+        <NextTopLoader color="#ff6b35" />
+        <UserProvider>
+          {children}
+        </UserProvider>
       </body>
     </html>
   );

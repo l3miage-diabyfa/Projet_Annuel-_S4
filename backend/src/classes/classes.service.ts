@@ -7,7 +7,6 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
-import { Class, Prisma } from '@prisma/client';
 
 @Injectable()
 export class ClassesService {
@@ -20,7 +19,8 @@ export class ClassesService {
     teacher: {
       select: { 
         id: true, 
-        name: true, 
+        firstname: true, 
+        lastname: true, 
         email: true, 
         role: true 
       },
@@ -30,61 +30,128 @@ export class ClassesService {
         student: {
           select: { 
             id: true, 
-            name: true, 
+            firstname: true, 
+            lastname: true, 
             email: true, 
             role: true 
           },
         },
       },
     },
-  } satisfies Prisma.ClassInclude;
+  };
 
-  /**
-   * CREATE - Create a new class
-   */
   async create(createClassDto: CreateClassDto) {
-    // Validate teacher exists
-    const teacher = await this.prisma.user.findUnique({
-      where: { id: createClassDto.teacherId },
-    });
+  // Validate teacher exists
+  const teacher = await this.prisma.user.findUnique({
+    where: { id: createClassDto.teacherId },
+  });
 
-    if (!teacher) {
-      throw new NotFoundException(
-        `Teacher with ID ${createClassDto.teacherId} not found`
-      );
+  if (!teacher) {
+    throw new NotFoundException(`Professeur avec l'ID ${createClassDto.teacherId} pas trouvé`);
+  }
+
+  // Allow TEACHER and ADMIN (for testing)
+  if (teacher.role !== 'TEACHER' && teacher.role !== 'ADMIN') {
+    throw new BadRequestException('Seuls les responsables pédagogiques peuvent créer des classes');
+  }
+
+  // Check for duplicate class name by same teacher
+  const existingClass = await this.prisma.class.findFirst({
+    where: {
+      name: createClassDto.name,
+      teacherId: createClassDto.teacherId,
+    },
+  });
+
+  if (existingClass) {
+    throw new ConflictException(
+      `Class "${createClassDto.name}" already exists for this teacher`
+    );
+  }
+
+  // Parse student emails
+  let studentEmails: string[] = [];
+  if (createClassDto.studentEmails) {
+    studentEmails = createClassDto.studentEmails
+      .split(';')
+      .map(email => email.trim())
+      .filter(email => email.length > 0 && email.includes('@'));
+  }
+
+  // Create the class (without studentEmails in data)
+  const { studentEmails: _, ...classData } = createClassDto;
+  const classItem = await this.prisma.class.create({
+    data: classData,
+    include: this.includeRelations,
+  });
+
+  // Create student users and enrollments
+  if (studentEmails.length > 0) {
+    for (const email of studentEmails) {
+      try {
+        // Check if user already exists
+        let student = await this.prisma.user.findUnique({
+          where: { email },
+        });
+
+        // If student doesn't exist, create invitation placeholder
+        if (!student) {
+          student = await this.prisma.user.create({
+            data: {
+              email,
+              lastname: '',
+              firstname: '',
+              password: '', // They'll set password via invitation link
+              role: 'STUDENT',
+              establishmentId: teacher.establishmentId,
+            },
+          });
+        }
+
+        // Check if enrollment already exists
+        const existingEnrollment = await this.prisma.enrollment.findFirst({
+          where: {
+            classId: classItem.id,
+            studentId: student.id,
+          },
+        });
+
+        // Create enrollment if it doesn't exist
+        if (!existingEnrollment) {
+          await this.prisma.enrollment.create({
+            data: {
+              classId: classItem.id,
+              studentId: student.id,
+            },
+          });
+        }
+      } catch (err) {
+        // Log error but continue with other students
+        console.error(`Failed to enroll ${email}:`, err);
+      }
     }
+  }
 
-    if (teacher.role !== 'TEACHER') {
-      throw new BadRequestException(
-        'User must have TEACHER role to create a class'
-      );
-    }
-
-    // Check for duplicate class name by same teacher
-    const existingClass = await this.prisma.class.findFirst({
-      where: {
-        name: createClassDto.name,
-        teacherId: createClassDto.teacherId,
-      },
-    });
-
-    if (existingClass) {
-      throw new ConflictException(
-        `Class "${createClassDto.name}" already exists for this teacher`
-      );
-    }
-
-    return this.prisma.class.create({
-      data: createClassDto,
-      include: this.includeRelations,
+  // Return class with updated enrollments
+  return this.prisma.class.findUnique({
+    where: { id: classItem.id },
+    include: this.includeRelations,
     });
   }
 
   /**
    * READ - Get all classes
    */
-  async findAll(teacherId?: string) {
-    const where = teacherId ? { teacherId } : {};
+  async findAll(teacherId?: string, isActive?: boolean) {
+    const where: any = {};
+  
+    if (teacherId) {
+      where.teacherId = teacherId;
+    }
+  
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
 
     return this.prisma.class.findMany({
       where,
@@ -134,18 +201,21 @@ export class ClassesService {
    */
   async update(id: string, updateClassDto: UpdateClassDto) {
     // Check if class exists
-    await this.findOne(id);
+    const classItem = await this.prisma.class.findUnique({
+      where: { id },
+      include: { teacher: true },
+    });
+
+    if (!classItem) {
+      throw new NotFoundException('Class not found');
+    }
 
     // Check for duplicate name if name is being updated
-    if (updateClassDto.name) {
-      const classItem = await this.prisma.class.findUnique({
-        where: { id },
-      });
-
+    if (updateClassDto.name && updateClassDto.name !== classItem.name) {
       const existingClass = await this.prisma.class.findFirst({
         where: {
           name: updateClassDto.name,
-          teacherId: classItem!.teacherId,
+          teacherId: classItem.teacherId,
           NOT: { id },
         },
       });
@@ -157,11 +227,84 @@ export class ClassesService {
       }
     }
 
+    // Handle student emails if provided
+    if (updateClassDto.studentEmails) {
+      const emails = updateClassDto.studentEmails
+        .split(';')
+        .map(email => email.trim())
+        .filter(email => email && email.includes('@'));
+
+      if (emails.length > 0) {
+        await this.parseAndEnrollStudents(id, emails, classItem.teacher.establishmentId);
+      }
+    }
+
+    // Update class (exclude studentEmails from database update)
+    const { studentEmails, ...dataToUpdate } = updateClassDto;
+
     return this.prisma.class.update({
       where: { id },
-      data: updateClassDto,
+      data: dataToUpdate,
       include: this.includeRelations,
     });
+  }
+
+  /**
+   * HELPER - Parse student emails and enroll them
+   */
+  private async parseAndEnrollStudents(
+    classId: string, 
+    emails: string[],
+    establishmentId: string
+  ) {
+    const bcrypt = require('bcrypt');
+
+    for (const email of emails) {
+      // Check if user exists
+      let student = await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+      // If student doesn't exist, create them
+      if (!student) {
+        const defaultPassword = await bcrypt.hash('ChangeMe123!', 10);
+
+        student = await this.prisma.user.create({
+          data: {
+            email,
+            password: defaultPassword,
+            firstname: email.split('@')[0], // Use email prefix as firstname
+            lastname: 'Student',
+            role: 'STUDENT',
+            establishmentId,
+          },
+        });
+
+        console.log(`✅ Created new student: ${email}`);
+      }
+
+      // Check if already enrolled
+      const existingEnrollment = await this.prisma.enrollment.findFirst({
+        where: {
+          classId,
+          studentId: student.id,
+        },
+      });
+
+      // If not enrolled, create enrollment
+      if (!existingEnrollment) {
+        await this.prisma.enrollment.create({
+          data: {
+            classId,
+            studentId: student.id,
+          },
+        });
+
+        console.log(`✅ Enrolled student: ${email} in class`);
+      } else {
+        console.log(`ℹ️  Student ${email} already enrolled`);
+      }
+    }
   }
 
   /**
@@ -200,7 +343,7 @@ export class ClassesService {
     }
 
     // Check if already enrolled
-    const existingEnrollment = await this.prisma.studentEnrollment.findUnique({
+    const existingEnrollment = await this.prisma.enrollment.findUnique({
       where: {
         classId_studentId: { classId, studentId },
       },
@@ -208,15 +351,15 @@ export class ClassesService {
 
     if (existingEnrollment) {
       throw new ConflictException(
-        `Student ${student.name} is already enrolled in this class`
+        `Student ${student.firstname} ${student.lastname} is already enrolled in this class`
       );
     }
 
-    return this.prisma.studentEnrollment.create({
+    return this.prisma.enrollment.create({
       data: { classId, studentId },
       include: {
         student: {
-          select: { id: true, name: true, email: true, role: true },
+          select: { id: true, firstname: true, lastname: true, email: true, role: true },
         },
         class: {
           select: { id: true, name: true },
@@ -229,7 +372,7 @@ export class ClassesService {
    * REMOVE STUDENT - Unenroll a student from a class
    */
   async removeStudent(classId: string, studentId: string) {
-    const enrollment = await this.prisma.studentEnrollment.findUnique({
+    const enrollment = await this.prisma.enrollment.findUnique({
       where: {
         classId_studentId: { classId, studentId },
       },
@@ -241,7 +384,7 @@ export class ClassesService {
       );
     }
 
-    await this.prisma.studentEnrollment.delete({
+    await this.prisma.enrollment.delete({
       where: {
         classId_studentId: { classId, studentId },
       },
@@ -259,14 +402,50 @@ export class ClassesService {
     return {
       classId: classItem.id,
       name: classItem.name,
-      teacher: classItem.teacher.name,
+      teacher: classItem.teacher.firstname + ' ' + classItem.teacher.lastname,
       totalStudents: classItem.enrollments.length,
       students: classItem.enrollments.map(e => ({
         id: e.student.id,
-        name: e.student.name,
+        name: e.student.firstname + ' ' + e.student.lastname,
         email: e.student.email,
         enrolledAt: e.createdAt,
       })),
     };
   }
+
+  /**
+   * ARCHIVE - Archive a class
+   */
+  async archive(id: string) {
+    // Check if class exists
+    await this.findOne(id);
+
+    const archivedClass = await this.prisma.class.update({
+      where: { id },
+      data: { isActive: false },
+      include: this.includeRelations,
+    });
+
+    // TODO: Send email notification
+    // await this.mailerService.sendClassArchivedEmail(
+    //   archivedClass.teacher.email,
+    //   archivedClass.name
+    // );
+
+    return archivedClass;
+  }
+
+  /**
+   * UNARCHIVE - Reactivate a class
+   */
+  async unarchive(id: string) {
+    await this.findOne(id);
+
+    return this.prisma.class.update({
+      where: { id },
+      data: { isActive: true },
+      include: this.includeRelations,
+    });
+  }
+
 }

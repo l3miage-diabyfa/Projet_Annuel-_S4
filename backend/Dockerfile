@@ -13,7 +13,7 @@ COPY . .
 
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3000
 
-# Start in development mode
-CMD ["npm", "run", "start:dev"]
+# Start the application
+# Docker-compose.yml does the rest.
