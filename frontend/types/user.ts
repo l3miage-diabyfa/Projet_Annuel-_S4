@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'REFERENT';
+export type Role = 'ADMIN' | 'TEACHER';
 
 export interface EstablishmentUser {
   id: string;

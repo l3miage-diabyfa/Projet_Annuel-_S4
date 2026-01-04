@@ -24,7 +24,7 @@ export default function ShareModal({
   onRemoveAccess,
 }: ShareModalProps) {
   const [email, setEmail] = useState("");
-  const [selectedRole, setSelectedRole] = useState<Role>("REFERENT");
+  const [selectedRole, setSelectedRole] = useState<Role>("TEACHER");
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
@@ -43,14 +43,14 @@ export default function ShareModal({
     if (email && onInvite) {
       onInvite(email, selectedRole);
       setEmail("");
-      setSelectedRole("REFERENT");
+      setSelectedRole("TEACHER");
     }
   };
 
   const handleRoleChange = (collaboratorId: string, newRole: string) => {
     if (newRole === "remove" && onRemoveAccess) {
       onRemoveAccess(collaboratorId);
-    } else if ((newRole === "ADMIN" || newRole === "REFERENT") && onChangeRole) {
+    } else if ((newRole === "ADMIN" || newRole === "TEACHER") && onChangeRole) {
       onChangeRole(collaboratorId, newRole as Role);
     }
   };
@@ -102,7 +102,7 @@ export default function ShareModal({
                 aria-label="Sélectionner un rôle"
               >
                 <option value="">Rôle</option>
-                <option value="REFERENT">Editeur</option>
+                <option value="TEACHER">Editeur</option>
                 <option value="ADMIN">Admin</option>
               </select>
             </div>
@@ -158,7 +158,7 @@ export default function ShareModal({
                       aria-label={`Modifier le rôle de ${collaborator.firstname} ${collaborator.lastname}`}
                     >
                       <option value="ADMIN">Admin</option>
-                      <option value="REFERENT">Editeur</option>
+                      <option value="TEACHER">Editeur</option>
                       <option value="remove" className="text-red-600">
                         Supprimer l&apos;accès
                       </option>

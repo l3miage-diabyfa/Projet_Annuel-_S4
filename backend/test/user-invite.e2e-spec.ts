@@ -46,13 +46,13 @@ describe('User Invitation (e2e)', () => {
     expect(res.body.user.establishmentId).toBe(adminEstablishmentId);
   });
 
-  it('should invite a user with role REFERENT', async () => {
-    const res = await request(app.getHttpServer())
+  it('should invite a user with role TEACHER', async () => {
+    const response = await request(app.getHttpServer())
       .post('/user/invite')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${authToken}`)
       .send({
-        email: 'invited-referent@test.com',
-        role: 'REFERENT'
+        email: 'invited-teacher@test.com',
+        role: 'TEACHER'
       });
     expect(res.status).toBe(201);
     expect(res.body.user).toBeDefined();

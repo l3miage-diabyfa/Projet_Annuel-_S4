@@ -44,10 +44,11 @@ export class SubjectsService {
       throw new NotFoundException('Utilisateur introuvable');
     }
 
-    // Check authorization: must be teacher of the class, referent, or admin
+    // Check authorization: must be teacher of the class, teacher or admin
     const isTeacherOfClass = classItem.teacherId === userId;
     const isAuthorized = 
       isTeacherOfClass || 
+      user.role === 'TEACHER' ||
       user.role === 'ADMIN';
 
     if (!isAuthorized) {
@@ -260,7 +261,7 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
     const isAuthorized = 
       isTeacherOfClass || 
       isEnrolled || 
-      user.role === 'REFERENT' || 
+      user.role === 'TEACHER' || 
       user.role === 'ADMIN';
 
     if (!isAuthorized) {
@@ -355,7 +356,7 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
     const isAuthorized = 
       isTeacherOfClass || 
       isEnrolled || 
-      user.role === 'REFERENT' || 
+      user.role === 'TEACHER' || 
       user.role === 'ADMIN';
 
     if (!isAuthorized) {
