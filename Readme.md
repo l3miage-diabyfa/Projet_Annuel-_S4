@@ -101,7 +101,7 @@ Le backend expose plusieurs APIs RESTful documentées via Swagger :
 - **`/establishment`** : Gestion des établissements scolaires
 - **`/subscription`** : Gestion des abonnements et paiements Stripe
 
-**Documentation interactive** : `http://localhost:3000/api` (en développement)
+**Documentation interactive** : `http://localhost:3000/api` (swagger)
 
 **Collection Postman** : https://gym-challenge-api.postman.co/workspace/Personal-Workspace~2b10435d-92be-4e4e-adf3-a23675778594/collection/27114032-e9056d77-94ff-4f93-ade9-06641d8d22e4?action=share&source=copy-link&creator=27114032
 
@@ -166,14 +166,43 @@ Variables d'environnement critiques :
 DATABASE_URL="postgresql://user:password@localhost:5432/izzi_db"
 JWT_SECRET="votre-clé-secrète-jwt"
 FRONTEND_URL="http://localhost:3001"
-STRIPE_SECRET_KEY="sk_test_..."
+
+SMTP_HOST=in-v3.mailjet.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=52e05e9b7a624e304cbda738a5539695
+SMTP_PASS=12b67f756a7bc8b4dcbbe0ac71762216
+SMTP_EMAIL_FROM=IZZZI <no-reply@izzzi.com>
+
+# Google OAuth
+GOOGLE_CLIENT_ID=1058146106696-jt236ocjeq042hqi14di5fumjefjbr4o.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_51Sld2C0RT2eFQsc53EdWfSDVJ1sDvuSXV34c0coq4kAg6PvAXluJRGOxTHWrbx6KpQFnzaKYv9eE3RcsdKlNZjMI0096KpBSf6
 STRIPE_WEBHOOK_SECRET="whsec_..."
 ```
 
 ### Frontend (.env.local)
 ```env
 NEXT_PUBLIC_API_URL="http://localhost:3000"
+NEXT_PUBLIC_JWT_SECRET=dev-secret-key
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=1058146106696-jt236ocjeq042hqi14di5fumjefjbr4o.apps.googleusercontent.com
+
 NEXT_PUBLIC_GA_ID="G-XXXXXXXXXX"  # Google Analytics (optionnel)
+```
+
+### Racine (.env)
+
+# Database
+```env
+POSTGRES_USER=school_admin
+POSTGRES_PASSWORD=school_password
+POSTGRES_DB=school_db
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+
+STRIPE_SECRET_KEY=sk_test...
 ```
 
 ## 📦 Déploiement en production
