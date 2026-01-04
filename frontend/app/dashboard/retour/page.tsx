@@ -40,6 +40,8 @@ export default function DashboardPage() {
         return;
       }
 
+      const token = getTokenCookie();
+
       // Get all teacher's classes
       const classes = await getClasses({ 
         teacherId: userInfo.userId,
@@ -61,6 +63,61 @@ export default function DashboardPage() {
 
           // Add "during" form feedback
           if (typedSubject.duringForm) {
+            let score = 0;
+            let alertCount = 0;
+            let summary = "Aucun retour pour le moment";
+
+            if (typedSubject.duringForm._count?.reviews > 0) {
+              try {
+                const statsResponse = await fetch(
+                  `${process.env.NEXT_PUBLIC_API_URL}/reviews/forms/${typedSubject.duringForm.id}/responses`,
+                  {
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                    },
+                  }
+                );
+
+                if (statsResponse.ok) {
+                  const statsData = await statsResponse.json();
+                  
+                  // Calculate average score from STARS fields
+                  const starFields = statsData.fields?.filter((f: any) => f.type === 'STARS') || [];
+                  if (starFields.length > 0 && statsData.reviews?.length > 0) {
+                    let totalScore = 0;
+                    let scoreCount = 0;
+
+                    statsData.reviews.forEach((review: any) => {
+                      review.responses.forEach((resp: any) => {
+                        const field = starFields.find((f: any) => f.id === resp.fieldId);
+                        if (field && typeof resp.value === 'number') {
+                          totalScore += resp.value;
+                          scoreCount++;
+                        }
+                      });
+                    });
+
+                    score = scoreCount > 0 ? Math.round((totalScore / scoreCount) * 10) / 10 : 0;
+                    
+                    // Count alerts (reviews with average < 3)
+                    alertCount = statsData.reviews.filter((review: any) => {
+                      const reviewScores = review.responses
+                        .filter((r: any) => starFields.some((f: any) => f.id === r.fieldId))
+                        .map((r: any) => r.value);
+                      const avg = reviewScores.length > 0 
+                        ? reviewScores.reduce((a: number, b: number) => a + b, 0) / reviewScores.length 
+                        : 0;
+                      return avg < 3;
+                    }).length;
+
+                    summary = `${statsData.reviews.length} retour${statsData.reviews.length > 1 ? 's' : ''} reçu${statsData.reviews.length > 1 ? 's' : ''} avec une note moyenne de ${score}/5`;
+                  }
+                }
+              } catch (err) {
+                console.error('Error loading stats:', err);
+              }
+            }
+
             allFeedbacks.push({
               id: `during-${typedSubject.duringForm.id}`,
               subject: subject.name,
@@ -68,18 +125,72 @@ export default function DashboardPage() {
               teacher: subject.instructorName || 'Non spécifié',
               type: "during_course",
               returnCount: typedSubject.duringForm._count?.reviews || 0,
-              score: 0, // TODO: Calculate from responses
-              alertCount: 0, // TODO: Calculate from responses
-              summary: "Chargement de la synthèse...", // TODO: Generate from AI
+              score,
+              alertCount,
+              summary,
               endDate: subject.lastLessonDate 
                 ? new Date(subject.lastLessonDate).toLocaleDateString('fr-FR')
                 : 'Non défini',
               formId: typedSubject.duringForm.id,
+              isFinished: subject.lastLessonDate ? new Date(subject.lastLessonDate) < new Date() : false,
             });
           }
 
           // Add "after" form feedback
           if (typedSubject.afterForm) {
+            let score = 0;
+            let alertCount = 0;
+            let summary = "Aucun retour pour le moment";
+
+            if (typedSubject.afterForm._count?.reviews > 0) {
+              try {
+                const statsResponse = await fetch(
+                  `${process.env.NEXT_PUBLIC_API_URL}/reviews/forms/${typedSubject.afterForm.id}/responses`,
+                  {
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                    },
+                  }
+                );
+
+                if (statsResponse.ok) {
+                  const statsData = await statsResponse.json();
+                  
+                  const starFields = statsData.fields?.filter((f: any) => f.type === 'STARS') || [];
+                  if (starFields.length > 0 && statsData.reviews?.length > 0) {
+                    let totalScore = 0;
+                    let scoreCount = 0;
+
+                    statsData.reviews.forEach((review: any) => {
+                      review.responses.forEach((resp: any) => {
+                        const field = starFields.find((f: any) => f.id === resp.fieldId);
+                        if (field && typeof resp.value === 'number') {
+                          totalScore += resp.value;
+                          scoreCount++;
+                        }
+                      });
+                    });
+
+                    score = scoreCount > 0 ? Math.round((totalScore / scoreCount) * 10) / 10 : 0;
+                    
+                    alertCount = statsData.reviews.filter((review: any) => {
+                      const reviewScores = review.responses
+                        .filter((r: any) => starFields.some((f: any) => f.id === r.fieldId))
+                        .map((r: any) => r.value);
+                      const avg = reviewScores.length > 0 
+                        ? reviewScores.reduce((a: number, b: number) => a + b, 0) / reviewScores.length 
+                        : 0;
+                      return avg < 3;
+                    }).length;
+
+                    summary = `${statsData.reviews.length} retour${statsData.reviews.length > 1 ? 's' : ''} reçu${statsData.reviews.length > 1 ? 's' : ''} avec une note moyenne de ${score}/5`;
+                  }
+                }
+              } catch (err) {
+                console.error('Error loading stats:', err);
+              }
+            }
+
             allFeedbacks.push({
               id: `after-${typedSubject.afterForm.id}`,
               subject: subject.name,
@@ -87,13 +198,14 @@ export default function DashboardPage() {
               teacher: subject.instructorName || 'Non spécifié',
               type: "end_of_course",
               returnCount: typedSubject.afterForm._count?.reviews || 0,
-              score: 0, // TODO: Calculate
-              alertCount: 0, // TODO: Calculate
-              summary: "Chargement de la synthèse...",
+              score,
+              alertCount,
+              summary,
               endDate: subject.lastLessonDate 
                 ? new Date(subject.lastLessonDate).toLocaleDateString('fr-FR')
                 : 'Non défini',
               formId: typedSubject.afterForm.id,
+              isFinished: subject.lastLessonDate ? new Date(subject.lastLessonDate) < new Date() : false,
             });
           }
         }
@@ -114,9 +226,21 @@ export default function DashboardPage() {
       feedback.teacher.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesAlerts = !showAlertsOnly || feedback.alertCount > 0;
+    
+    const matchesTab = activeTab === "current" ? !feedback.isFinished : feedback.isFinished;
 
-    return matchesSearch && matchesAlerts;
+    return matchesSearch && matchesAlerts && matchesTab;
   });
+
+  // Group feedbacks by class
+  const feedbacksByClass = filteredFeedbacks.reduce((acc, feedback) => {
+    const className = feedback.classCode;
+    if (!acc[className]) {
+      acc[className] = [];
+    }
+    acc[className].push(feedback);
+    return acc;
+  }, {} as Record<string, Feedback[]>);
 
   if (loading) {
     return (
@@ -238,9 +362,24 @@ export default function DashboardPage() {
             <p className="text-gray-500">Aucun retour trouvé</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredFeedbacks.map((feedback) => (
-              <FeedbackCard key={feedback.id} feedback={feedback} />
+          <div className="space-y-8">
+            {Object.entries(feedbacksByClass).map(([className, classFeedbacks]) => (
+              <div key={className} className="space-y-4">
+                {/* Class Header */}
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-bold text-gray-900">{className}</h2>
+                  <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
+                    {classFeedbacks.length} formulaire{classFeedbacks.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+                
+                {/* Class Feedbacks */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {classFeedbacks.map((feedback) => (
+                    <FeedbackCard key={feedback.id} feedback={feedback} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
