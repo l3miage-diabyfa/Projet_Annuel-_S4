@@ -13,6 +13,8 @@ export default function ClassForm({ initialData, isEdit = false }: ClassFormProp
   const router = useRouter();
   const [name, setName] = useState(initialData?.name || '');
   const [description, setDescription] = useState(initialData?.description || '');
+   const [academicYear, setAcademicYear] = useState(initialData?.academicYear || '2024-2025');
+  const [gradeLevel, setGradeLevel] = useState(initialData?.gradeLevel || 'CE1');
   const [teacherId, setTeacherId] = useState(initialData?.teacherId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export default function ClassForm({ initialData, isEdit = false }: ClassFormProp
           setLoading(false);
           return;
         }
-        await createClass({ name, description, teacherId });
+        await createClass({ name, description, teacherId, academicYear, gradeLevel });
         alert('Class created successfully!');
       }
       
@@ -102,6 +104,56 @@ export default function ClassForm({ initialData, isEdit = false }: ClassFormProp
           }}
           placeholder="Enter class description..."
         />
+      </div>
+
+       {/* ✅ NEW FIELD: Academic Year */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+          Academic Year *
+        </label>
+        <input
+          type="text"
+          value={academicYear}
+          onChange={(e) => setAcademicYear(e.target.value)}
+          required
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            fontSize: '16px',
+          }}
+          placeholder="e.g., 2024-2025"
+        />
+      </div>
+
+      {/* ✅ NEW FIELD: Grade Level */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+          Grade Level *
+        </label>
+        <select
+          value={gradeLevel}
+          onChange={(e) => setGradeLevel(e.target.value)}
+          required
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            fontSize: '16px',
+          }}
+        >
+          <option value="CP">CP (Cours Préparatoire)</option>
+          <option value="CE1">CE1</option>
+          <option value="CE2">CE2</option>
+          <option value="CM1">CM1</option>
+          <option value="CM2">CM2</option>
+          <option value="6ème">6ème</option>
+          <option value="5ème">5ème</option>
+          <option value="4ème">4ème</option>
+          <option value="3ème">3ème</option>
+        </select>
       </div>
 
       {!isEdit && (

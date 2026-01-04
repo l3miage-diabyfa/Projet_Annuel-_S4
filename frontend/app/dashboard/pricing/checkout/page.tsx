@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { IoArrowBack } from "react-icons/io5";
 import { FaLock } from "react-icons/fa";
 import { getTokenCookie } from "@/utils/cookie";
 
-export default function PricingCheckoutPage() {
+function CheckoutPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const intervalParam = searchParams.get('interval');
@@ -362,5 +362,13 @@ export default function PricingCheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PricingCheckoutPage() {
+  return (
+    <Suspense fallback={<div className="text-center p-8">Chargement...</div>}>
+      <CheckoutPage />
+    </Suspense>
   );
 }

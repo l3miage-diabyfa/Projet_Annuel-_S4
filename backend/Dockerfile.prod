@@ -1,0 +1,43 @@
+FROM node:25-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install ALL dependencies (including dev) for building
+RUN npm ci
+
+# Copy source
+COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Build application (needs @nestjs/cli from devDependencies)
+RUN npm run build
+
+# Production stage
+FROM node:25-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# ✅ Install ONLY production dependencies
+RUN npm ci --only=production
+
+# Generate Prisma Client in production stage
+RUN npx prisma generate
+
+# Copy built application from builder
+COPY --from=builder /app/dist ./dist
+
+# Expose port
+EXPOSE 3000
+
+# Start production server
+CMD ["npm", "run", "start:prod"]

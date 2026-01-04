@@ -1,8 +1,7 @@
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: school-postgres
+    container_name: school-postgres-dev
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-school_admin}
@@ -11,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_dev_data:/var/lib/postgresql/data
     networks:
       - school-network
     healthcheck:
@@ -20,13 +19,11 @@ services:
       timeout: 5s
       retries: 5
 
-  # NestJS Backend
   backend:
-    image: school-backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: school-backend
+    container_name: school-backend-dev
     restart: always
     env_file:
       - ./backend/.env
@@ -39,7 +36,6 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
-      # - /app/dist    <--- FIX THIS LATER
     depends_on:
       postgres:
         condition: service_healthy
@@ -47,13 +43,11 @@ services:
       - school-network
     command: npm run start:docker
 
-  # Next.js Frontend
   frontend:
-    image: school-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: school-frontend
+    container_name: school-frontend-dev
     restart: always
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3000
@@ -83,7 +77,7 @@ services:
       - backend
 
 volumes:
-  postgres_data:
+  postgres_dev_data:
 
 networks:
   school-network:

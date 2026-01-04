@@ -140,4 +140,6 @@ export class EmailService {
 
     return { sent, failed };
   }
+
+  
 }

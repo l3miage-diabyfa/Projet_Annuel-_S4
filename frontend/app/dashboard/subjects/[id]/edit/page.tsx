@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FiArrowLeft } from "react-icons/fi";
@@ -8,7 +8,7 @@ import { getSubjectsByClass, updateSubject, type Subject } from "@/lib/api";
 import { getTokenCookie } from "@/utils/cookie";
 import SubjectForm from "../../components/SubjectForm";
 
-export default function EditSubjectPage() {
+function EditSubject() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -152,5 +152,13 @@ export default function EditSubjectPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function EditSubjectPage() {
+  return (
+    <Suspense fallback={<div className="text-center p-8">Chargement...</div>}>
+      <EditSubject />
+    </Suspense>
   );
 }

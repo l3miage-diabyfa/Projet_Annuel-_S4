@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import InputField from "@/components/shared/InputField";
@@ -11,7 +11,8 @@ import { apiFetch } from "@/utils/api";
 import { setTokenCookie } from "@/utils/cookie";
 import { useUser } from "@/contexts/UserContext";
 
-export default function SignupPage() {
+// Separate component that uses useSearchParams
+function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const invitationToken = searchParams.get("invitation");
@@ -255,5 +256,18 @@ export default function SignupPage() {
         </div>
       )}
     </>
+  );
+}
+
+// Main export with Suspense wrapper
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="text-center p-8">
+        <p className="text-gray-600">Chargement...</p>
+      </div>
+    }>
+      <SignupForm />
+    </Suspense>
   );
 }
