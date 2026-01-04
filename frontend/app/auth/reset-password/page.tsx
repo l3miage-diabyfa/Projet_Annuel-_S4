@@ -8,6 +8,8 @@ import { useSearchParams } from "next/navigation";
 import { FiArrowUpRight } from "react-icons/fi";
 import { apiFetch } from "@/utils/api";
 
+export const dynamic = 'force-dynamic';
+
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
