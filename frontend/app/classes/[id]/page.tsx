@@ -7,8 +7,8 @@ import { FiSearch, FiPlus } from "react-icons/fi";
 import { useParams } from "next/navigation";
 import BackButton from "../../components/backButton";
 import TrialBanner from "../../components/TrialBanner";
-import SubjectRow from "./components/SubjectRow";
-import SelectFormModal from "./components/SelectFormModal";
+import SubjectRow from "../../components/SubjectRow";
+import SelectFormModal from "../../components/SelectFormModal";
 import { getClass, getSubjectsByClass, type Class, type Subject } from "@/lib/api";
 import { getTokenCookie } from "@/utils/cookie";
 
