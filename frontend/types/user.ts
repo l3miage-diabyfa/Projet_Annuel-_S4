@@ -18,4 +18,7 @@ export interface UserInfo {
   provider?: string;
   profilePic?: string;
   trialEndDate?: string;
+  planType?: 'FREE' | 'PREMIUM';
+  subscriptionStatus?: 'ACTIVE' | 'CANCELED' | 'PAST_DUE' | 'TRIALING' | 'INCOMPLETE';
+  numberOfClasses?: number;
 }

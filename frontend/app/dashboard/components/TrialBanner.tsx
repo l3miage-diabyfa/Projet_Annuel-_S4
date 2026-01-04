@@ -21,6 +21,16 @@ export default function TrialBanner() {
 
   const trialEndDateFormatted = formatDate(user?.trialEndDate);
 
+  // Don't show banner if user has PREMIUM plan
+  if (user?.planType === 'PREMIUM') {
+    return null;
+  }
+
+  // Only show banner for ADMIN users
+  if (user?.role !== 'ADMIN') {
+    return null;
+  }
+
   // check if trialEndDate exists
   if (!user?.trialEndDate) {
     return null;

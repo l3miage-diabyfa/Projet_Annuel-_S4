@@ -248,7 +248,9 @@ export default function AdminNavbar() {
               <span className="text-sm font-medium text-gray-900">
                 {user ? `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.email : 'Utilisateur'}
               </span>
-              <span className="text-xs font-bold">Plan gratuit</span>
+              <span className="text-xs font-bold">
+                {user?.planType === 'PREMIUM' ? 'Super Izzi' : 'Plan gratuit'}
+              </span>
             </div>
           </Link>
           

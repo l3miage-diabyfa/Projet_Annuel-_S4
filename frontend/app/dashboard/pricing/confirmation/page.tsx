@@ -2,9 +2,66 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { IoNotificationsOutline, IoCheckmarkCircle, IoArrowForward, IoDownloadOutline } from "react-icons/io5";
+import { useState, useEffect } from "react";
+import { IoCheckmarkCircle, IoArrowForward, IoDownloadOutline } from "react-icons/io5";
+import { getTokenCookie } from "@/utils/cookie";
+import { useUser } from "@/contexts/UserContext";
 
 export default function PricingConfirmationPage() {
+  const { setUser } = useUser();
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  // Rafraîchir les données utilisateur au montage pour avoir le nouveau statut premium
+  useEffect(() => {
+    const refreshUserData = async () => {
+      try {
+        const token = getTokenCookie();
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error('Erreur rafraîchissement données utilisateur:', error);
+      }
+    };
+
+    refreshUserData();
+  }, [setUser]);
+
+  const handleDownloadInvoice = async () => {
+    setIsDownloading(true);
+    try {
+      const token = getTokenCookie();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subscription/invoice`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Impossible de récupérer la facture');
+      }
+
+      const data = await response.json();
+      
+      if (data.invoiceUrl) {
+        // Ouvrir la facture Stripe dans un nouvel onglet
+        window.open(data.invoiceUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Erreur téléchargement facture:', error);
+      alert('Impossible de télécharger la facture pour le moment');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -99,10 +156,12 @@ export default function PricingConfirmationPage() {
               </Link>
 
               <button
-                className="flex items-center justify-center gap-2 w-full bg-white border-2 border-gray-300 text-gray-900 font-medium py-4 px-6 rounded-lg transition-all hover:bg-gray-50"
+                onClick={handleDownloadInvoice}
+                disabled={isDownloading}
+                className="flex items-center justify-center gap-2 w-full bg-white border-2 border-gray-300 text-gray-900 font-medium py-4 px-6 rounded-lg transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <IoDownloadOutline className="w-5 h-5" />
-                Télécharger ma facture
+                {isDownloading ? 'Chargement...' : 'Télécharger ma facture'}
               </button>
             </div>
           </div>

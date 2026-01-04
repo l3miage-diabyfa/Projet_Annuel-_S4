@@ -1,11 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { json, urlencoded } from 'express';
+import { json, urlencoded, raw } from 'express';
 
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Configure raw body for Stripe webhook endpoint (must be before json middleware)
+  app.use('/subscription/webhook', raw({ type: 'application/json' }));
   
   // Increase body size limit for file uploads (e.g., profile pictures)
   app.use(json({ limit: '5mb' }));
