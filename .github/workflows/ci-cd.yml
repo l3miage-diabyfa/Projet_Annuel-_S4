@@ -8,8 +8,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/l3miage-diabyfa/projet-annuel-s4-backend
-  FRONTEND_IMAGE: ghcr.io/l3miage-diabyfa/projet-annuel-s4-frontend
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/projet-annuel-s4-backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/projet-annuel-s4-frontend
 
 jobs:
   # ========== BACKEND TESTS ==========

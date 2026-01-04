@@ -18,7 +18,7 @@ services:
       retries: 5
 
   backend:
-    image: ghcr.io/honzikoi/izzi-backend:latest
+    image: ghcr.io/l3miage-diabyfa/projet-annuel-s4-backend:latest
     container_name: school-backend-prod
     restart: always
     environment:
@@ -35,7 +35,7 @@ services:
       - school-network
 
   frontend:
-    image: ghcr.io/honzikoi/izzi-frontend:latest
+    image: ghcr.io/l3miage-diabyfa/projet-annuel-s4-frontend:latest
     container_name: school-frontend-prod
     restart: always
     environment:
