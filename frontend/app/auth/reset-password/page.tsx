@@ -3,14 +3,13 @@
 import Alert from "@/components/shared/Alert";
 import Link from "next/link";
 import InputField from "@/components/shared/InputField";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { FiArrowUpRight } from "react-icons/fi";
 import { apiFetch } from "@/utils/api";
 
-export const dynamic = 'force-dynamic';
-
-export default function ResetPasswordPage() {
+// Create a separate component that uses useSearchParams
+function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   
@@ -91,7 +90,7 @@ export default function ResetPasswordPage() {
         <Alert mode="error">{error}</Alert>
       ) : submitted ? (
         <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-bold font-mochiy  mb-2">
+          <h2 className="text-lg font-bold font-mochiy mb-2">
             🔒 Mot de passe réinitialisé avec succès !
           </h2>
           <p className="text-gray-800 max-w-md">
@@ -140,3 +139,15 @@ export default function ResetPasswordPage() {
   );
 }
 
+// Wrap the form component in Suspense
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center p-8">
+        <p className="text-gray-600">Chargement...</p>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
+  );
+}
