@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiArrowLeft } from "react-icons/fi";
 import { getSubjectsByClass, getClass, deleteSubject, type Subject, type Class } from "@/lib/api";
 import { getTokenCookie } from "@/utils/cookie";
 
-export default function SubjectsPage() {
+function SubjectsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const classId = searchParams.get('classId');
@@ -277,5 +277,13 @@ export default function SubjectsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SubjectsPage() {  // Keep the original name
+  return (
+    <Suspense fallback={<div className="text-center p-8">Chargement...</div>}>
+      <SubjectsContent />
+    </Suspense>
   );
 }

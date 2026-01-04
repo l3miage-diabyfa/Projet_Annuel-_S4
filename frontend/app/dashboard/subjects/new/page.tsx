@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FiArrowLeft } from "react-icons/fi";
@@ -9,7 +9,7 @@ import { getTokenCookie } from "@/utils/cookie";
 import SubjectForm from "../components/SubjectForm";
 import CSVUploadSection from "../components/CSVUploadSection";
 
-export default function NewSubjectPage() {
+function NewSubject() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const classId = searchParams.get('classId');
@@ -104,5 +104,13 @@ export default function NewSubjectPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function NewSubjectPage() {
+  return (
+    <Suspense fallback={<div className="text-center p-8">Chargement...</div>}>
+      <NewSubject />
+    </Suspense>
   );
 }
