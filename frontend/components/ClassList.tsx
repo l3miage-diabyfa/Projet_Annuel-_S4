@@ -52,7 +52,7 @@ export default function ClassList({ classes }: { classes: Class[] }) {
                 </p>
               )}
               <p style={{ fontSize: '14px', color: '#888' }}>
-                <strong>Teacher:</strong> {classItem.teacher.name}
+                <strong>Teacher:</strong> {classItem.teacher.firstname} {classItem.teacher.lastname}
               </p>
               <p style={{ fontSize: '14px', color: '#888' }}>
                 <strong>Students:</strong> {classItem.enrollments.length}
@@ -95,7 +95,7 @@ export default function ClassList({ classes }: { classes: Class[] }) {
               <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
                 {classItem.enrollments.map((enrollment) => (
                   <li key={enrollment.id} style={{ fontSize: '14px', color: '#666' }}>
-                    {enrollment.student.name} ({enrollment.student.email})
+                    {enrollment.student.firstname} {enrollment.student.lastname} ({enrollment.student.email})
                   </li>
                 ))}
               </ul>
