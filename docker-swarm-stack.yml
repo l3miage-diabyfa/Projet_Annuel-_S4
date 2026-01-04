@@ -60,7 +60,7 @@ services:
   # BACKEND API
   # ============================================
   backend:
-    image: ghcr.io/honzikoi/izzi-backend:latest
+    image: ghcr.io/l3miage-diabyfa/projet-annuel-s4-backend:latest
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:password@postgres:5432/school_db
@@ -90,7 +90,7 @@ services:
   # FRONTEND
   # ============================================
   frontend:
-    image: ghcr.io/honzikoi/izzi-frontend:latest
+    image: ghcr.io/l3miage-diabyfa/projet-annuel-s4-frontend:latest
     environment:
       NEXT_PUBLIC_API_URL: https://api.izzi.local
       NODE_ENV: production
