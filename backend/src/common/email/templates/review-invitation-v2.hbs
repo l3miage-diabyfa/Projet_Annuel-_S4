@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Un petit retour sur votre cours {{subjectName}} ?</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid #eeeeee;
+        }
+        .logo {
+            max-width: 150px;
+            height: auto;
+        }
+        .tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .content {
+            padding: 40px 30px;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .message {
+            font-size: 16px;
+            margin-bottom: 25px;
+            color: #555555;
+        }
+        .course-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .course-info p {
+            margin: 8px 0;
+            color: #2c3e50;
+        }
+        .course-info strong {
+            color: #667eea;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .note {
+            font-size: 14px;
+            color: #7f8c8d;
+            font-style: italic;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .deadline-notice {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #856404;
+        }
+        .footer {
+            background-color: #ff6b35;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .footer p {
+            margin: 8px 0;
+        }
+        .footer a {
+            color: white;
+            text-decoration: underline;
+        }
+        .signature {
+            margin-top: 30px;
+            font-size: 16px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                border-radius: 0;
+            }
+            .content {
+                padding: 30px 20px;
+            }
+            .tag {
+                font-size: 20px;
+                padding: 15px;
+            }
+            .cta-button {
+                padding: 12px 30px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="{{frontendUrl}}/images/logo.png" alt="Izzzi Logo" class="logo">
+        </div>
+        
+        <div class="tag">
+            📝 Un petit retour sur votre cours ?
+        </div>
+        
+        <div class="content">
+            <p class="greeting">Bonjour {{studentFirstName}},</p>
+            
+            <div class="course-info">
+                <p><strong>Matière :</strong> {{subjectName}}</p>
+                <p><strong>Classe :</strong> {{className}}</p>
+                <p><strong>Intervenant :</strong> {{instructorName}}</p>
+                <p><strong>Type d'évaluation :</strong> {{formType}}</p>
+            </div>
+            
+            <p class="message">
+                Vous avez suivi le cours <strong>{{subjectName}}</strong> avec <strong>{{instructorName}}</strong>.<br>
+                Un petit retour de votre part serait super utile pour faire évoluer les choses dans le bon sens.
+            </p>
+
+            {{#if hasDeadline}}
+            <div class="deadline-notice">
+                ⏰ <strong>Date limite :</strong> {{deadline}}
+            </div>
+            {{/if}}
+            
+            <p class="message">
+                Laisser un retour prend moins d'une minute :
+            </p>
+            
+            <div class="button-container">
+                <a href="{{feedbackUrl}}" class="cta-button">Donner mon avis</a>
+            </div>
+            
+            <div class="note">
+                Votre avis compte, qu'il soit positif ou plus critique.<br>
+                Merci pour votre participation à l'amélioration des cours !
+            </div>
+            
+            <p class="signature">
+                À bientôt,<br>
+                <strong>L'équipe Izzzi</strong>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>IZZZI - Plateforme de gestion des cours</strong></p>
+            <p>Des questions ? Contactez-nous à <a href="mailto:tizisalim5@gmail.com">tizisalim5@gmail.com</a></p>
+            <p style="margin-top: 15px; font-size: 12px; opacity: 0.9;">
+                © 2026 IZZZI. Tous droits réservés.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
