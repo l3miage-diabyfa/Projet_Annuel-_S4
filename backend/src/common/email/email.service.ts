@@ -10,7 +10,7 @@ export class EmailService {
     return await this.senderService.sendEmail({
       to: email,
       subject: 'Bienvenue sur IZZZI ! 🎓',
-      template: 'signup-welcome',
+      template: 'signup-welcome-v2',
       context: {
         firstName,
         lastName,
@@ -26,7 +26,7 @@ export class EmailService {
     return await this.senderService.sendEmail({
       to: email,
       subject: `${inviterfirstName} ${inviterlastName} vous invite à rejoindre  la plateforme IZZZI`,
-      template: 'signup-invitation',
+      template: 'signup-invitation-v2',
       context: {
         inviterfirstName,
         inviterlastName,
@@ -45,7 +45,7 @@ export class EmailService {
     return await this.senderService.sendEmail({
       to: adminEmail,
       subject: `Invitation envoyée à ${invitedEmail}`,
-      template: 'invitation-confirmation',
+      template: 'invitation-confirmation-v2',
       context: {
         firstName,
         lastName,
@@ -61,7 +61,7 @@ export class EmailService {
     return await this.senderService.sendEmail({
       to: email,
       subject: 'Réinitialisation de votre mot de passe - IZZZI',
-      template: 'password-reset',
+      template: 'password-reset-v2',
       context: {
         resetUrl,
       },
@@ -86,7 +86,7 @@ export class EmailService {
     return await this.senderService.sendEmail({
       to: studentEmail,
       subject: `📝 Votre avis sur "${data.subjectName}" - ${data.formType}`,
-      template: 'review-invitation',
+      template: 'review-invitation-v2',
       context: {
         studentFirstName,
         subjectName: data.subjectName,
