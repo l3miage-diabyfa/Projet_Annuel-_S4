@@ -239,6 +239,48 @@ export class ReviewsService {
   }
 
   /**
+   * GET - Get review form by public link (PUBLIC)
+   */
+  async getReviewFormByPublicLink(publicLink: string) {
+    const form = await this.prisma.reviewForm.findUnique({
+      where: { publicLink },
+      include: {
+        fields: {
+          orderBy: { order: 'asc' },
+        },
+        class: {
+          select: { id: true, name: true },
+        },
+        subject: {
+          select: { 
+            id: true, 
+            name: true,
+            class: {
+              select: { id: true, name: true }
+            }
+          },
+        },
+      },
+    });
+
+    if (!form) {
+      throw new NotFoundException('Formulaire introuvable');
+    }
+
+    if (!form.isActive) {
+      throw new BadRequestException('Ce formulaire n\'est plus actif');
+    }
+
+    // Si le formulaire n'a pas de classe directe mais a un subject, utiliser la classe du subject
+    const result = {
+      ...form,
+      class: form.class || form.subject?.class || null,
+    };
+
+    return result;
+  }
+
+  /**
    * GET - Get all forms for a class (TEACHER only)
    */
   async getFormsByClass(classId: string, userId: string) {

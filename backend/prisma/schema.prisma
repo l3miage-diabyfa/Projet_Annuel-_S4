@@ -224,7 +224,7 @@ model ReviewForm {
   classId     String?
   subjectId   String?  // Optional: specific to a subject
   isActive    Boolean  @default(true)
-  publicLink  String?   @default(uuid())
+  publicLink  String?  @unique @default(uuid())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

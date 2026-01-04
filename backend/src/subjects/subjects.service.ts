@@ -273,7 +273,18 @@ async importFromCsv(importDto: ImportSubjectsCsvDto, userId: string) {
     return this.prisma.subject.findMany({
       where: { classId },
       orderBy: { createdAt: 'desc' },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        instructorName: true,
+        instructorEmail: true,
+        firstLessonDate: true,
+        lastLessonDate: true,
+        classId: true,
+        duringFormSentAt: true,
+        afterFormSentAt: true,
+        createdAt: true,
+        updatedAt: true,
         class: {
           select: {
             id: true,

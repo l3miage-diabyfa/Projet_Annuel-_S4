@@ -18,7 +18,7 @@ interface ReviewForm {
   id: string;
   title: string;
   type: string;
-  class: { name: string };
+  class?: { name: string };
   subject?: { name: string };
   fields: FormField[];
 }
@@ -31,6 +31,7 @@ export default function PublicFeedbackPage() {
   const [form, setForm] = useState<ReviewForm | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [responses, setResponses] = useState<Record<string, any>>({});
 
@@ -40,12 +41,20 @@ export default function PublicFeedbackPage() {
 
   async function loadForm() {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/forms/${publicLink}`);
-      if (!response.ok) throw new Error('Formulaire introuvable');
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/reviews/public/${publicLink}`;
+      
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Erreur API:', errorText);
+        throw new Error('Formulaire introuvable');
+      }
       
       const data = await response.json();
       setForm(data);
     } catch (err) {
+      console.error('Erreur:', err);
       setError(err instanceof Error ? err.message : 'Erreur de chargement');
     } finally {
       setLoading(false);
@@ -73,9 +82,8 @@ export default function PublicFeedbackPage() {
 
       if (!response.ok) throw new Error('Erreur lors de la soumission');
 
-      // Success!
-      alert('✅ Merci pour votre retour!');
-      router.push('/');
+      // Success! Show thank you message
+      setSubmitted(true);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Erreur');
     } finally {
@@ -120,6 +128,18 @@ export default function PublicFeedbackPage() {
     );
   }
 
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="max-w-2xl w-full text-center mx-auto py-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            Merci pour votre<br />message
+          </h1>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -135,13 +155,15 @@ export default function PublicFeedbackPage() {
               </div>
 
               <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                {form.subject?.name || form.class.name}
+                {form.subject?.name || form.class?.name || form.title}
               </h1>
               
               <div className="flex flex-wrap gap-2 mb-6">
-                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
-                  {form.class.name}
-                </span>
+                {form.class?.name && (
+                  <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                    {form.class.name}
+                  </span>
+                )}
                 <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
                   {form.type === 'DURING_CLASS' ? 'Pendant le cours' : 'Fin du cours'}
                 </span>

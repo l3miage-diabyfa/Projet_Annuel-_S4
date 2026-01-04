@@ -49,6 +49,8 @@ export interface Subject {
   firstLessonDate: string | null;
   lastLessonDate: string | null;
   classId: string;
+  duringFormSentAt?: string | null;
+  afterFormSentAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
