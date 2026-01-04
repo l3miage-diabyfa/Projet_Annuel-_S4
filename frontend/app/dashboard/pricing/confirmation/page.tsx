@@ -1,75 +1,69 @@
 "use client";
 
-import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { IoNotificationsOutline, IoCheckmarkCircle, IoArrowForward, IoDownloadOutline } from "react-icons/io5";
+import { useState, useEffect } from "react";
+import { IoCheckmarkCircle, IoArrowForward, IoDownloadOutline } from "react-icons/io5";
+import { getTokenCookie } from "@/utils/cookie";
+import { useUser } from "@/contexts/UserContext";
 
 export default function PricingConfirmationPage() {
+  const { setUser } = useUser();
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  // Rafraîchir les données utilisateur au montage pour avoir le nouveau statut premium
+  useEffect(() => {
+    const refreshUserData = async () => {
+      try {
+        const token = getTokenCookie();
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error('Erreur rafraîchissement données utilisateur:', error);
+      }
+    };
+
+    refreshUserData();
+  }, [setUser]);
+
+  const handleDownloadInvoice = async () => {
+    setIsDownloading(true);
+    try {
+      const token = getTokenCookie();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subscription/invoice`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Impossible de récupérer la facture');
+      }
+
+      const data = await response.json();
+      
+      if (data.invoiceUrl) {
+        // Ouvrir la facture Stripe dans un nouvel onglet
+        window.open(data.invoiceUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Erreur téléchargement facture:', error);
+      alert('Impossible de télécharger la facture pour le moment');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="max-w-[98vw] fixed top-4 left-0 right-0 mx-auto bg-white rounded-xl shadow-sm px-8 py-4 z-50">
-        <div className="mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/dashboard">
-              <div className="w-auto h-full rounded-full flex items-center justify-center">
-                <Image
-                  src="/logo.svg"
-                  alt="Logo"
-                  width={112}
-                  height={112}
-                  className="w-16 sm:w-20"
-                />
-              </div>
-            </Link>
-          </div>
-
-          <div className="flex flex-col items-center p-2 bg-gray-50 border border-gray-200 rounded-lg">
-            <div className="flex gap-2">
-              <Link
-                href="/dashboard/class"
-                className="flex-1 py-3 px-5 whitespace-nowrap rounded-sm font-medium text-center transition-colors bg-gray-900 text-white"
-              >
-                Mes classes
-              </Link>
-              <Link
-                href="/dashboard"
-                className="flex-1 py-3 px-5 whitespace-nowrap rounded-sm font-medium text-center transition-colors bg-transparent text-gray-900 hover:bg-gray-100"
-              >
-                Dashboard
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button 
-              className="p-2 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
-              aria-label="Notifications"
-            >
-              <IoNotificationsOutline className="w-6 h-6 text-gray-700" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Emma"
-                alt="Yoann Caoulan"
-                className="w-10 h-10 rounded-full bg-gray-400"
-              />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-900">
-                  Yoann Caoulan
-                </span>
-                <span 
-                  className="text-xs font-bold text-white px-2 py-0.5 rounded inline-block"
-                  style={{ backgroundColor: '#F26103' }}
-                >
-                  Super Izzzi
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
 
       <div className="pt-32 pb-12 px-4 max-w-7xl mx-auto">
         <div className="text-center mb-12">
@@ -162,10 +156,12 @@ export default function PricingConfirmationPage() {
               </Link>
 
               <button
-                className="flex items-center justify-center gap-2 w-full bg-white border-2 border-gray-300 text-gray-900 font-medium py-4 px-6 rounded-lg transition-all hover:bg-gray-50"
+                onClick={handleDownloadInvoice}
+                disabled={isDownloading}
+                className="flex items-center justify-center gap-2 w-full bg-white border-2 border-gray-300 text-gray-900 font-medium py-4 px-6 rounded-lg transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <IoDownloadOutline className="w-5 h-5" />
-                Télécharger ma facture
+                {isDownloading ? 'Chargement...' : 'Télécharger ma facture'}
               </button>
             </div>
           </div>

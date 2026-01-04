@@ -15,10 +15,12 @@ export default function ClassForm({ initialData, isEdit = false }: ClassFormProp
   const [description, setDescription] = useState(initialData?.description || '');
   const [teacherId, setTeacherId] = useState(initialData?.teacherId || '');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
       if (isEdit && initialData) {
@@ -38,8 +40,9 @@ export default function ClassForm({ initialData, isEdit = false }: ClassFormProp
       
       router.push('/classes');
       router.refresh();
-    } catch (error) {
-      alert(`Failed to ${isEdit ? 'update' : 'create'} class`);
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || `Failed to ${isEdit ? 'update' : 'create'} class`;
+      setError(errorMessage);
       console.error(error);
     } finally {
       setLoading(false);
@@ -48,6 +51,20 @@ export default function ClassForm({ initialData, isEdit = false }: ClassFormProp
 
   return (
     <form onSubmit={handleSubmit}>
+      {error && (
+        <div style={{
+          marginBottom: '20px',
+          padding: '12px 16px',
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: '6px',
+          color: '#991b1b',
+          fontSize: '14px',
+        }}>
+          <strong>Erreur :</strong> {error}
+        </div>
+      )}
+      
       <div style={{ marginBottom: '20px' }}>
         <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
           Class Name *
