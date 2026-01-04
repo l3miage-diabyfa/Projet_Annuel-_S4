@@ -2,9 +2,13 @@ name: Test CI/CD Pipeline
 
 on:
   push:
-    branches: [main, dev, feature/clusterisation]
+    branches: 
+      - 'feature/**'  # All feature branches
   pull_request:
-    branches: [main, dev]
+    branches: 
+      - dev
+    paths-ignore:  # Optional: ignore docs changes
+      - '**.md'
 
 env:
   REGISTRY: ghcr.io
