@@ -7,7 +7,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install ALL dependencies (including dev) for building
-RUN npm ci
+RUN npm i
 
 # Copy source
 COPY . .
@@ -28,7 +28,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # ✅ Install ONLY production dependencies
-RUN npm ci --only=production
+RUN npm i --only=production
 
 # Generate Prisma Client in production stage
 RUN npx prisma generate
