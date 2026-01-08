@@ -9,9 +9,11 @@ export class RegisterAdminDto {
   email: string;
 
   @IsNotEmpty({ message: 'Le nom est obligatoire.' })
+  @MinLength(2, { message: 'Le nom doit contenir au moins 2 caractères.' })
   lastname: string;
 
   @IsNotEmpty({ message: 'Le prénom est obligatoire.' })
+  @MinLength(2, { message: 'Le prénom doit contenir au moins 2 caractères.' })
   firstname: string;
 
   @IsNotEmpty({ message: 'Le mot de passe est obligatoire.' })
