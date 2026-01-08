@@ -114,9 +114,7 @@ export default function LoginPage() {
     <>
       <form onSubmit={handleSubmit} className="flex flex-col gap-2  w-full">
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>
         )}
         <InputField
           label="Adresse email"
@@ -128,7 +126,6 @@ export default function LoginPage() {
           className="input w-full"
           required
         />
-
         <InputField
           label="Mot de passe"
           name="password"
@@ -139,7 +136,6 @@ export default function LoginPage() {
           className="input w-full"
           required
         />
-
         <div className=" text-gray-900 text-right mb-4 mr-2 text-sm">
           <Link
             href="/auth/forgot-password"
@@ -148,7 +144,6 @@ export default function LoginPage() {
             Mot de passe oublié ?
           </Link>
         </div>
-
         <button type="submit" className="button-primary mx-auto !px-8">
           Se connecter <FiArrowUpRight />
         </button>
