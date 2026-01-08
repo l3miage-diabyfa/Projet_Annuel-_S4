@@ -28,7 +28,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # ✅ Install ONLY production dependencies
-RUN npm ci --only=production
+RUN npm i
 
 # Generate Prisma Client in production stage
 RUN npx prisma generate
