@@ -6,6 +6,14 @@ import { json, urlencoded, raw } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'https://esgizzi.fr',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    exposedHeaders: ['Content-Type', 'Authorization'],
+  });
   
   // Configure raw body for Stripe webhook endpoint (must be before json middleware)
   app.use('/subscription/webhook', raw({ type: 'application/json' }));
@@ -13,11 +21,6 @@ async function bootstrap() {
   // Increase body size limit for file uploads (e.g., profile pictures)
   app.use(json({ limit: '5mb' }));
   app.use(urlencoded({ limit: '5mb', extended: true }));
-  
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
-    credentials: true,
-  });
 
   // Swagger configuration
   const config = new DocumentBuilder()

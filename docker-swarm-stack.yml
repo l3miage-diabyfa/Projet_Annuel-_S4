@@ -95,7 +95,7 @@ services:
         - "traefik.docker.network=traefik-public"
         - "traefik.http.routers.backend.rule=Host(`api.esgizzi.fr`)"
         - "traefik.http.routers.backend.entrypoints=websecure"
-        - "traefik.http.routers.backend.backend.tls=true"
+        - "traefik.http.routers.backend.tls=true"
         - "traefik.http.routers.backend.tls.certresolver=myresolver"
         - "traefik.http.services.backend.loadbalancer.server.port=3000"
 
