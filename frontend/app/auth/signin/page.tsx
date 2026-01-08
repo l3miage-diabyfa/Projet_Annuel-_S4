@@ -28,8 +28,18 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validation LoginUserDto
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!form.email || !form.password) {
       setError("Veuillez remplir tous les champs.");
+      return;
+    }
+    if (!emailRegex.test(form.email)) {
+      setError("Adresse email invalide.");
+      return;
+    }
+    if (form.password.length < 8) {
+      setError("Le mot de passe doit contenir au moins 8 caractères.");
       return;
     }
     const { data, error } = await apiFetch<{ 

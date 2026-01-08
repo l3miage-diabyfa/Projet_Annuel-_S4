@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, Matches } from 'class-validator';
 
 export class CompleteInvitationDto {
   @IsString()
@@ -17,7 +17,10 @@ export class CompleteInvitationDto {
   @IsNotEmpty()
   lastname: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Le mot de passe est obligatoire.' })
+  @MinLength(8, { message: 'Le mot de passe doit contenir au moins 8 caractères.' })
+  @Matches(/^(?=.*[a-zA-Z])(?=.*\d).+$/, {
+    message: 'Le mot de passe doit contenir des lettres et des chiffres.'
+  })
   password: string;
 }

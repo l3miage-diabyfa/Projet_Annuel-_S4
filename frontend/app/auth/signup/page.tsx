@@ -55,20 +55,64 @@ export default function SignupPage() {
     e.preventDefault();
     setError("");
 
-    // invitation signup
+    // Contrôles communs
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/;
+
     if (invitationToken) {
+      // Contrôles pour CompleteInvitationDto
       if (!form.email || !form.nom || !form.prenom || !form.password) {
         setError("Tous les champs sont obligatoires.");
         return;
       }
+      if (!emailRegex.test(form.email)) {
+        setError("Adresse email invalide.");
+        return;
+      }
+      if (form.nom.length < 2) {
+        setError("Le nom doit contenir au moins 2 caractères.");
+        return;
+      }
+      if (form.prenom.length < 2) {
+        setError("Le prénom doit contenir au moins 2 caractères.");
+        return;
+      }
+      if (!form.password || form.password.length < 8) {
+        setError("Le mot de passe doit contenir au moins 8 caractères.");
+        return;
+      }
+      if (!passwordRegex.test(form.password)) {
+        setError("Le mot de passe doit contenir des lettres et des chiffres.");
+        return;
+      }
     } else {
-      // Admin signup
+      // Contrôles pour RegisterAdminDto
       if (!form.etablissement || !form.email || !form.nom || !form.prenom || !form.password) {
         setError("Tous les champs sont obligatoires.");
         return;
       }
+      if (!emailRegex.test(form.email)) {
+        setError("Adresse email invalide.");
+        return;
+      }
+      if (form.nom.length < 2) {
+        setError("Le nom doit contenir au moins 2 caractères.");
+        return;
+      }
+      if (form.prenom.length < 2) {
+        setError("Le prénom doit contenir au moins 2 caractères.");
+        return;
+      }
+      if (!form.password || form.password.length < 8) {
+        setError("Le mot de passe doit contenir au moins 8 caractères.");
+        return;
+      }
+      if (!passwordRegex.test(form.password)) {
+        setError("Le mot de passe doit contenir des lettres et des chiffres.");
+        return;
+      }
     }
-    
+
     const { data, error } = await apiFetch<{ 
       access_token: string; 
       message?: string;
