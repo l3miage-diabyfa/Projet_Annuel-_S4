@@ -28,7 +28,7 @@ services:
         constraints:
           - node.role == manager
       labels:
-        - "traefik.enable=true"
+        - "traefik.enable=false"
         - "traefik.http.routers.api.rule=Host(`traefik.izzi.local`)"
         - "traefik.http.routers.api.service=api@internal"
 
@@ -63,15 +63,24 @@ services:
     image: ghcr.io/l3miage-diabyfa/projet-annuel-s4-backend:latest
     environment:
       NODE_ENV: production
+      STRIPE_API_KEY: sk_test_51Hxxxxxx  # Replace with actual test key
+      STRIPE_WEBHOOK_SECRET: whsec_xxxxxxx  # Replace with actual webhook secret
+      SMTP_HOST: in-v3.mailjet.com
+      SMTP_PORT: 587
+      SMTP_USER: your-mailjet-username  # Replace with actual Mailjet username
+      SMTP_PASSWORD: your-mailjet-password  # Replace with actual Mailjet password
+      SMTP_SECURE: "false"
+      SMTP_MAIL_FROM: "ESGIZZI <no-reply@esgizzi.fr>"
       DATABASE_URL: postgresql://postgres:password@postgres:5432/school_db
       JWT_SECRET_FILE: /run/secrets/jwt_secret
-      FRONTEND_URL: https://izzi.local
+      FRONTEND_URL: https://esgizzi.fr
     networks:
       - backend-network
       - traefik-public
     secrets:
       - jwt_secret
       - db_password
+      - db_user
     deploy:
       replicas: 2  # As per requirements (minimum 2)
       update_config:
@@ -79,10 +88,14 @@ services:
         delay: 10s
       restart_policy:
         condition: on-failure
+        delay: 30s
+        max_attempts: 3
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.backend.rule=Host(`api.izzi.local`)"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.http.routers.backend.rule=Host(`api.esgizzi.fr`)"
         - "traefik.http.routers.backend.entrypoints=websecure"
+        - "traefik.http.routers.backend.backend.tls=true"
         - "traefik.http.routers.backend.tls.certresolver=myresolver"
         - "traefik.http.services.backend.loadbalancer.server.port=3000"
 
@@ -92,7 +105,7 @@ services:
   frontend:
     image: ghcr.io/l3miage-diabyfa/projet-annuel-s4-frontend:latest
     environment:
-      NEXT_PUBLIC_API_URL: https://api.izzi.local
+      NEXT_PUBLIC_API_URL: https://api.esgizzi.fr
       NODE_ENV: production
     networks:
       - traefik-public
@@ -105,8 +118,10 @@ services:
         condition: on-failure
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.frontend.rule=Host(`izzi.local`)"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.http.routers.frontend.rule=Host(`esgizzi.fr`)"
         - "traefik.http.routers.frontend.entrypoints=websecure"
+        - "traefik.http.routers.frontend.tls=true"
         - "traefik.http.routers.frontend.tls.certresolver=myresolver"
         - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 

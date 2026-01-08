@@ -27,7 +27,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# ✅ Install ONLY production dependencies
+# Install ONLY production dependencies
 RUN npm i --only=production
 
 # Generate Prisma Client in production stage
