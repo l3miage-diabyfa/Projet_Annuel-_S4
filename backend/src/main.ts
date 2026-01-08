@@ -8,7 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule); 
  
   app.enableCors({
-    origin: 'https:51.91.156.178',
+    origin: 'https://esgizzi.fr',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
