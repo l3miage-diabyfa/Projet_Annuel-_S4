@@ -3,34 +3,25 @@ services:
   # TRAEFIK - Reverse Proxy + Load Balancer
   # ============================================
   traefik:
-    image: traefik:v2.10
+    image: traefik:v2.11
     command:
       - "--api.dashboard=true"
+      - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.swarmMode=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=your-email@example.com"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
-      - "443:443"
       - "8080:8080"  # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik-certificates:/letsencrypt
     networks:
       - traefik-public
     deploy:
       placement:
         constraints:
           - node.role == manager
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.api.rule=Host(`traefik.izzi.local`)"
-        - "traefik.http.routers.api.service=api@internal"
 
   # ============================================
   # POSTGRES DATABASE
@@ -63,9 +54,11 @@ services:
     image: ghcr.io/l3miage-diabyfa/projet-annuel-s4-backend:latest
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/school_db
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/school_db
       JWT_SECRET_FILE: /run/secrets/jwt_secret
-      FRONTEND_URL: https://izzi.local
+      FRONTEND_URL: http://64.227.82.151
+      PORT: 3000
+      STRIPE_SECRET_KEY: sk_test_51Sld2C0RT2eFQsc53EdWfSDVJ1sDvuSXV34c0coq4kAg6PvAXluJRGOxTHWrbx6KpQFnzaKYv9eE3RcsdKlNZjMI0096KpBSf6
     networks:
       - backend-network
       - traefik-public
@@ -81,9 +74,9 @@ services:
         condition: on-failure
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.backend.rule=Host(`api.izzi.local`)"
-        - "traefik.http.routers.backend.entrypoints=websecure"
-        - "traefik.http.routers.backend.tls.certresolver=myresolver"
+        - "traefik.http.routers.backend.rule=(PathPrefix(`/api`) || PathPrefix(`/user`) || PathPrefix(`/classes`) || PathPrefix(`/subscription`) || PathPrefix(`/health`) || PathPrefix(`/contact`) || PathPrefix(`/establishment`) || PathPrefix(`/subjects`) || PathPrefix(`/reviews`))"
+        - "traefik.http.routers.backend.entrypoints=web"
+        - "traefik.http.routers.backend.priority=10"
         - "traefik.http.services.backend.loadbalancer.server.port=3000"
 
   # ============================================
@@ -92,7 +85,7 @@ services:
   frontend:
     image: ghcr.io/l3miage-diabyfa/projet-annuel-s4-frontend:latest
     environment:
-      NEXT_PUBLIC_API_URL: https://api.izzi.local
+      NEXT_PUBLIC_API_URL: http://64.227.82.151
       NODE_ENV: production
     networks:
       - traefik-public
@@ -105,9 +98,9 @@ services:
         condition: on-failure
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.frontend.rule=Host(`izzi.local`)"
-        - "traefik.http.routers.frontend.entrypoints=websecure"
-        - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+        - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+        - "traefik.http.routers.frontend.entrypoints=web"
+        - "traefik.http.routers.frontend.priority=1"
         - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
 # ============================================
@@ -126,7 +119,6 @@ networks:
 # ============================================
 volumes:
   postgres-data:
-  traefik-certificates:
 
 # ============================================
 # SECRETS
