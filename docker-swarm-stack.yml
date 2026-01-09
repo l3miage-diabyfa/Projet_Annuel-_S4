@@ -72,9 +72,7 @@ services:
       SMTP_USER: 52e05e9b7a624e304cbda738a5539695
       SMTP_PASS: 12b67f756a7bc8b4dcbbe0ac71762216
       SMTP_EMAIL_FROM: "ESGIZZI <no-reply@esgizzi.fr>"
-      DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
-      DATABASE_NAME: school_db
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/school_db
       JWT_SECRET_FILE: /run/secrets/jwt_secret
       FRONTEND_URL: https://esgizzi.fr
     networks:
@@ -86,6 +84,9 @@ services:
       - db_user
     deploy:
       replicas: 2  # As per requirements (minimum 2)
+      placement:                         
+        constraints:
+          - node.hostname == vps-03fe0122
       update_config:
         parallelism: 1
         delay: 10s
@@ -124,6 +125,9 @@ services:
       - traefik-public
     deploy:
       replicas: 3  # As per requirements (minimum 3)
+      placement:                           # ← SOUS deploy!
+        constraints:
+          - node.hostname == vps-03fe0122
       update_config:
         parallelism: 1
         delay: 10s
