@@ -28,7 +28,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 # Copy package files
 COPY package*.json ./
 
-# ✅ Install ONLY production dependencies
+# Install ONLY production dependencies
 RUN npm ci --only=production
 
 # Copy built files

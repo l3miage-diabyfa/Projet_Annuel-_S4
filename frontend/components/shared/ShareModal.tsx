@@ -120,51 +120,53 @@ export default function ShareModal({
 
           <div className="border-t border-gray-200 my-8"></div>
 
-          {collaborators.length > 0 && (
+          {collaborators.filter(c => c.role === 'ADMIN' || c.role === 'TEACHER').length > 0 && (
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
                 Personnes disposant de l&apos;accès
               </h3>
               <div className="space-y-3 sm:space-y-4">
-                {collaborators.map((collaborator) => (
-                  <div
-                    key={collaborator.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 py-2 sm:py-3"
-                  >
-                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                      <img
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${collaborator.email}`}
-                        alt={`${collaborator.firstname} ${collaborator.lastname}`}
-                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0 ${
-                          collaborator.isPending ? "opacity-40" : ""
-                        }`}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className={`font-semibold text-sm sm:text-base truncate ${
-                          collaborator.isPending ? "text-gray-400" : "text-gray-900"
-                        }`}>
-                          {collaborator.firstname} {collaborator.lastname}
-                        </div>
-                        <div className="text-xs sm:text-sm text-gray-500 truncate">
-                          {collaborator.email}
+                {collaborators
+                  .filter((collaborator) => collaborator.role === 'ADMIN' || collaborator.role === 'TEACHER')
+                  .map((collaborator) => (
+                    <div
+                      key={collaborator.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 py-2 sm:py-3"
+                    >
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                        <img
+                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${collaborator.email}`}
+                          alt={`${collaborator.firstname} ${collaborator.lastname}`}
+                          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0 ${
+                            collaborator.isPending ? "opacity-40" : ""
+                          }`}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className={`font-semibold text-sm sm:text-base truncate ${
+                            collaborator.isPending ? "text-gray-400" : "text-gray-900"
+                          }`}>
+                            {collaborator.firstname} {collaborator.lastname}
+                          </div>
+                          <div className="text-xs sm:text-sm text-gray-500 truncate">
+                            {collaborator.email}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <select
-                      value={collaborator.role}
-                      onChange={(e) => handleRoleChange(collaborator.id, e.target.value)}
-                      className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none bg-white w-full sm:w-auto sm:min-w-[160px] text-sm sm:text-base"
-                      aria-label={`Modifier le rôle de ${collaborator.firstname} ${collaborator.lastname}`}
-                    >
-                      <option value="ADMIN">Admin</option>
-                      <option value="TEACHER">Editeur</option>
-                      <option value="remove" className="text-red-600">
-                        Supprimer l&apos;accès
-                      </option>
-                    </select>
-                  </div>
-                ))}
+                      <select
+                        value={collaborator.role}
+                        onChange={(e) => handleRoleChange(collaborator.id, e.target.value)}
+                        className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none bg-white w-full sm:w-auto sm:min-w-[160px] text-sm sm:text-base"
+                        aria-label={`Modifier le rôle de ${collaborator.firstname} ${collaborator.lastname}`}
+                      >
+                        <option value="ADMIN">Admin</option>
+                        <option value="TEACHER">Editeur</option>
+                        <option value="remove" className="text-red-600">
+                          Supprimer l&apos;accès
+                        </option>
+                      </select>
+                    </div>
+                  ))}
               </div>
             </div>
           )}

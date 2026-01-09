@@ -56,20 +56,64 @@ function SignupForm() {
     e.preventDefault();
     setError("");
 
-    // invitation signup
+    // Contrôles communs
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/;
+
     if (invitationToken) {
+      // Contrôles pour CompleteInvitationDto
       if (!form.email || !form.nom || !form.prenom || !form.password) {
         setError("Tous les champs sont obligatoires.");
         return;
       }
+      if (!emailRegex.test(form.email)) {
+        setError("Adresse email invalide.");
+        return;
+      }
+      if (form.nom.length < 2) {
+        setError("Le nom doit contenir au moins 2 caractères.");
+        return;
+      }
+      if (form.prenom.length < 2) {
+        setError("Le prénom doit contenir au moins 2 caractères.");
+        return;
+      }
+      if (!form.password || form.password.length < 8) {
+        setError("Le mot de passe doit contenir au moins 8 caractères.");
+        return;
+      }
+      if (!passwordRegex.test(form.password)) {
+        setError("Le mot de passe doit contenir des lettres et des chiffres.");
+        return;
+      }
     } else {
-      // Admin signup
+      // Contrôles pour RegisterAdminDto
       if (!form.etablissement || !form.email || !form.nom || !form.prenom || !form.password) {
         setError("Tous les champs sont obligatoires.");
         return;
       }
+      if (!emailRegex.test(form.email)) {
+        setError("Adresse email invalide.");
+        return;
+      }
+      if (form.nom.length < 2) {
+        setError("Le nom doit contenir au moins 2 caractères.");
+        return;
+      }
+      if (form.prenom.length < 2) {
+        setError("Le prénom doit contenir au moins 2 caractères.");
+        return;
+      }
+      if (!form.password || form.password.length < 8) {
+        setError("Le mot de passe doit contenir au moins 8 caractères.");
+        return;
+      }
+      if (!passwordRegex.test(form.password)) {
+        setError("Le mot de passe doit contenir des lettres et des chiffres.");
+        return;
+      }
     }
-    
+
     const { data, error } = await apiFetch<{ 
       access_token: string; 
       message?: string;
@@ -161,80 +205,80 @@ function SignupForm() {
       {validatingToken && (
         <div className="text-gray-600 text-sm mb-2">Validation du lien d'invitation...</div>
       )}
-      {error && (
-        <div className="text-red-500 text-sm mb-2">{error}</div>
-      )}
-      {!validatingToken && !error && (
+      {!validatingToken && (
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-        {!invitationToken && (
+          {error && (
+            <div className="text-red-500 text-sm mb-2">{error}</div>
+          )}
+          {!invitationToken && (
+            <div>
+              <InputField
+                label="Nom de l'établissement"
+                name="etablissement"
+                type="text"
+                placeholder="Entrez le nom de l'établissement"
+                value={form.etablissement}
+                onChange={handleChange}
+                required
+                className="input w-full"
+              />
+            </div>
+          )}
           <div>
             <InputField
-              label="Nom de l'établissement"
-              name="etablissement"
-              type="text"
-              placeholder="Entrez le nom de l'établissement"
-              value={form.etablissement}
+              label="Adresse email"
+              name="email"
+              type="email"
+              placeholder="Entrez votre email"
+              value={form.email}
               onChange={handleChange}
               required
               className="input w-full"
             />
           </div>
-        )}
-        <div>
-          <InputField
-            label="Adresse email"
-            name="email"
-            type="email"
-            placeholder="Entrez votre email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            className="input w-full"
-          />
-        </div>
-        <div>
-          <InputField
-            label="Nom"
-            name="nom"
-            type="text"
-            placeholder="Entrez votre nom"
-            value={form.nom}
-            onChange={handleChange}
-            required
-            className="input w-full"
-          />
-        </div>
-        <div>
-          <InputField
-            label="Prénom"
-            name="prenom"
-            type="text"
-            placeholder="Entrez votre prénom"
-            value={form.prenom}
-            onChange={handleChange}
-            required
-            className="input w-full"
-          />
-        </div>
-        <div>
-          <InputField
-            label="Mot de passe"
-            name="password"
-            type="password"
-            placeholder="Entrez votre mot de passe"
-            value={form.password}
-            onChange={handleChange}
-            required
-            className="input w-full"
-          />
-        </div>
-        <button
-          type="submit"
-          className="button-primary w-auto mx-auto py-2 px-6"
-        >
-          Créer un compte <FiArrowUpRight />
-        </button>
-      </form>
+          <div>
+            <InputField
+              label="Nom"
+              name="nom"
+              type="text"
+              placeholder="Entrez votre nom"
+              value={form.nom}
+              onChange={handleChange}
+              required
+              className="input w-full"
+            />
+          </div>
+          <div>
+            <InputField
+              label="Prénom"
+              name="prenom"
+              type="text"
+              placeholder="Entrez votre prénom"
+              value={form.prenom}
+              onChange={handleChange}
+              required
+              className="input w-full"
+            />
+          </div>
+          <div>
+            <InputField
+              label="Mot de passe"
+              name="password"
+              type="password"
+              placeholder="Entrez votre mot de passe"
+              value={form.password}
+              onChange={handleChange}
+              required
+              className="input w-full"
+            />
+          </div>
+          <button
+            type="submit"
+            className="button-primary w-auto mx-auto py-2 px-6"
+          >
+            Créer un compte <FiArrowUpRight />
+          </button>
+        </form>
       )}
       {invitationToken && !error && !validatingToken && (
         <div className="text-center mt-2">

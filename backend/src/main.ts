@@ -5,10 +5,10 @@ import { json, urlencoded, raw } from 'express';
 
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule); 
- 
+  const app = await NestFactory.create(AppModule);
+
   app.enableCors({
-    origin: 'https://esgizzi.fr',
+    origin: process.env.FRONTEND_URL || 'https://esgizzi.fr',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
