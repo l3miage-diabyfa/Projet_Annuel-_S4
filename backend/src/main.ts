@@ -14,13 +14,13 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     exposedHeaders: ['Content-Type', 'Authorization'],
   });
-  
-  // Configure raw body for Stripe webhook endpoint (must be before json middleware)
+
+  // Configure raw body for Stripe webhook endpoint
   app.use('/subscription/webhook', raw({ type: 'application/json' }));
-  
-  // Increase body size limit for file uploads (e.g., profile pictures)
-  app.use(json({ limit: '5mb' }));
-  app.use(urlencoded({ limit: '5mb', extended: true }));
+
+  //Increase body size limit for file uploads (e.g., profile pictures)
+  app.use(json({ limit: '5mb'}));
+  app.use(urlencoded({ limit: '5mb', extended: true}));
 
   // Swagger configuration
   const config = new DocumentBuilder()

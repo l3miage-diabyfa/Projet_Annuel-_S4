@@ -12,7 +12,7 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=your-email@example.com"
+      - "--certificatesresolvers.myresolver.acme.email=honza.doan@gmail.com"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
@@ -29,7 +29,7 @@ services:
           - node.role == manager
       labels:
         - "traefik.enable=false"
-        - "traefik.http.routers.api.rule=Host(`traefik.izzi.local`)"
+        - "traefik.http.routers.api.rule=Host(`traefik.esgizzi`)"
         - "traefik.http.routers.api.service=api@internal"
 
   # ============================================
@@ -63,14 +63,15 @@ services:
     image: ghcr.io/l3miage-diabyfa/projet-annuel-s4-backend:latest
     environment:
       NODE_ENV: production
-      STRIPE_API_KEY: sk_test_51Hxxxxxx  # Replace with actual test key
-      STRIPE_WEBHOOK_SECRET: whsec_xxxxxxx  # Replace with actual webhook secret
+      #Stripe en clair
+      STRIPE_SECRET_KEY: sk_test_51ScadFE9JlGAjScBBnWRBVIUAVkD0TVTKptMU2BsfMKtQ1HTbiaWzW5iUs7e1GMO3XgiujLAllecyugxj6rP9LqJ00YpBwGw37
+      STRIPE_WEBHOOK_SECRET: whsec_B3itH52b7L2Rk82iyBsDxCcQ6MSaw7Hs
       SMTP_HOST: in-v3.mailjet.com
       SMTP_PORT: 587
-      SMTP_USER: your-mailjet-username  # Replace with actual Mailjet username
-      SMTP_PASSWORD: your-mailjet-password  # Replace with actual Mailjet password
       SMTP_SECURE: "false"
-      SMTP_MAIL_FROM: "ESGIZZI <no-reply@esgizzi.fr>"
+      SMTP_USER: 52e05e9b7a624e304cbda738a5539695
+      SMTP_PASS: 12b67f756a7bc8b4dcbbe0ac71762216
+      SMTP_EMAIL_FROM: "ESGIZZI <no-reply@esgizzi.fr>"
       DATABASE_URL: postgresql://postgres:password@postgres:5432/school_db
       JWT_SECRET_FILE: /run/secrets/jwt_secret
       FRONTEND_URL: https://esgizzi.fr
@@ -83,13 +84,16 @@ services:
       - db_user
     deploy:
       replicas: 2  # As per requirements (minimum 2)
+      placement:                         
+        constraints:
+          - node.hostname == vps-03fe0122
       update_config:
         parallelism: 1
         delay: 10s
       restart_policy:
         condition: on-failure
         delay: 30s
-        max_attempts: 3
+        max_attempts: 5
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=traefik-public"
@@ -97,7 +101,17 @@ services:
         - "traefik.http.routers.backend.entrypoints=websecure"
         - "traefik.http.routers.backend.tls=true"
         - "traefik.http.routers.backend.tls.certresolver=myresolver"
+        # Service config
         - "traefik.http.services.backend.loadbalancer.server.port=3000"
+        # Apply CORS middleware
+        - "traefik.http.routers.backend.middlewares=backend-cors@docker"
+        # CORS Middleware config
+        - "traefik.http.middlewares.backend-cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,PATCH,OPTIONS"
+        - "traefik.http.middlewares.backend-cors.headers.accesscontrolalloworiginlist=https://esgizzi.fr"
+        - "traefik.http.middlewares.backend-cors.headers.accesscontrolallowcredentials=true"
+        - "traefik.http.middlewares.backend-cors.headers.accesscontrolallowheaders=Content-Type,Authorization,Accept"
+        - "traefik.http.middlewares.backend-cors.headers.accesscontrolmaxage=100"
+        - "traefik.http.middlewares.backend-cors.headers.addvaryheader=true"
 
   # ============================================
   # FRONTEND
@@ -111,6 +125,9 @@ services:
       - traefik-public
     deploy:
       replicas: 3  # As per requirements (minimum 3)
+      placement:                           # ← SOUS deploy!
+        constraints:
+          - node.hostname == vps-03fe0122
       update_config:
         parallelism: 1
         delay: 10s
